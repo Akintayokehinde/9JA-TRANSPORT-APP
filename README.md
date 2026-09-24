@@ -28,6 +28,16 @@ For drivers / park operators:
 
 Goal is not to replace parks, but to help parks and drivers **organise passengers, reduce confusion, improve trust, and know how many passengers are coming before departure**.
 
+## Target Users
+
+Based on PRD §4:
+
+- **Passengers** – People travelling within cities or between locations using Danfo, minibuses, buses, and motorcycles.
+- **Drivers and Riders** – Approved Danfo drivers, bus drivers, and commercial bike riders.
+- **Park Workers** – People responsible for checking passengers, confirming bookings, directing passengers, and managing departures.
+- **Transport Business Owners** – Individuals or companies that own vehicles and want to monitor drivers, trips, passengers, and income.
+- **Administrator** – The organisation operating 9ja Transport, responsible for verifying users, handling complaints, monitoring activity, and managing the service.
+
 ## Main Features
 
 Based on `Docs/PRODUCT REQUIREMENTS DOCUMENT (PRD).md`:
