@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9ja Transport — Design Preview (Friendly / Accessible)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Trebuchet MS", Verdana, Geneva, sans-serif; background: #FFF8E1; color: #1F2937; padding: 28px 22px; line-height: 1.7; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 32px; font-weight: 800; color: #0A7A3B; margin-bottom: 4px; }
+  h2 { font-size: 17px; color: #0A7A3B; margin: 30px 0 12px; }
+  h2 span { background: #0A7A3B; color: #fff; border-radius: 999px; padding: 2px 12px; font-size: 14px; margin-right: 8px; }
+  p.sub { color: #6B7280; font-size: 14px; }
+  .feel { background: #fff; border: 2px dashed #0A7A3B; border-radius: 18px; padding: 14px 18px; font-size: 14px; margin-top: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .swatch { border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); border-radius: 18px; overflow: hidden; background: #fff; }
+  .swatch .c { height: 62px; }
+  .swatch .t { padding: 10px 12px; font-size: 12px; }
+  .swatch .t b { display: block; font-size: 14px; }
+  .card { background: #fff; border-radius: 18px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .font-label { font-size: 13px; color: #0A7A3B; margin-bottom: 10px; font-weight: 700; }
+  .t-h1 { font-size: 32px; font-weight: 800; color: #0A7A3B; }
+  .t-h2 { font-size: 22px; font-weight: 700; }
+  .t-body { font-size: 17px; }
+  .t-cap { font-size: 14px; color: #6B7280; }
+  .btnrow { display: flex; gap: 18px; flex-wrap: wrap; }
+  .btnitem { text-align: center; }
+  .btnitem small { display: block; margin-top: 8px; color: #6B7280; font-size: 13px; }
+  .btn { display: inline-block; min-height: 56px; line-height: 56px; padding: 0 34px; border-radius: 18px; font-weight: 800; font-size: 17px; border: none; cursor: pointer; font-family: inherit; }
+  .btn-n { background: #0A7A3B; color: #fff; }
+  .btn-n:hover { background: #086B34; }
+  .btn-h { background: #086B34; color: #fff; cursor: default; }
+  .btn-d { background: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 14px; font-weight: 800; margin-bottom: 8px; color: #0A7A3B; }
+  .field input { width: 100%; max-width: 400px; min-height: 56px; padding: 0 18px; font-size: 17px; font-family: inherit; border: 2px solid #D1D5DB; border-radius: 18px; background: #fff; }
+  .field input::placeholder { color: #9CA3AF; }
+  .field input:focus { outline: none; border-color: #0A7A3B; box-shadow: 0 0 0 4px rgba(10,122,59,.18); }
+  .field input.fs { border-color: #0A7A3B; box-shadow: 0 0 0 4px rgba(10,122,59,.18); }
+  .note { font-size: 13px; color: #6B7280; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>9ja Transport — Design Preview 👋</h1>
+  <p class="sub">Style reference only (chosen direction: Friendly / Accessible). Plain HTML + embedded CSS. Open directly in a browser.</p>
+  <div class="feel"><b>Feel assumption:</b> warm and welcoming for first-time smartphone users — big rounded shapes, extra-large 56px targets, calm green-led color, generous line-height, plain friendly words.</div>
+
+  <h2><span>1</span>Color palette</h2>
+  <div class="grid">
+    <div class="swatch"><div class="c" style="background:#0A7A3B"></div><div class="t"><b>Primary — Park Green</b><code>#0A7A3B</code><br>Main buttons, headings</div></div>
+    <div class="swatch"><div class="c" style="background:#FFC300"></div><div class="t"><b>Secondary — Danfo Yellow</b><code>#FFC300</code><br>Highlights, badges</div></div>
+    <div class="swatch"><div class="c" style="background:#FFF8E1"></div><div class="t"><b>Background — Cream</b><code>#FFF8E1</code><br>Warm page surface</div></div>
+    <div class="swatch"><div class="c" style="background:#175CD3"></div><div class="t"><b>Accent — Friendly Blue</b><code>#175CD3</code><br>Help, links</div></div>
+    <div class="swatch"><div class="c" style="background:#1F2937"></div><div class="t"><b>Text — Soft Black</b><code>#1F2937</code><br>Softer than pure black</div></div>
+    <div class="swatch"><div class="c" style="background:#D92D20"></div><div class="t"><b>Gentle Red</b><code>#D92D20</code><br>Errors, kind wording</div></div>
+  </div>
+
+  <h2><span>2</span>Typography</h2>
+  <div class="card">
+    <p class="font-label">Font: Trebuchet MS / Verdana (rounded, highly legible). Larger sizes for accessibility.</p>
+    <p class="t-h1">H1 — Good morning! Where to?</p>
+    <p class="t-h2">H2 — Your trips are safe with us</p>
+    <p class="t-body">Body 17px — Your fare is ₦1,500. You will see your driver Musa and bus KTU-123XY before you pay. No wahala.</p>
+    <p class="t-cap">Caption 14px — You can cancel anytime before departure. We will remind you 1 hour before. 🚌</p>
+  </div>
+
+  <h2><span>3</span>Button</h2>
+  <div class="card"><div class="btnrow">
+    <div class="btnitem"><button class="btn btn-n" type="button">Book a Ride 😊</button><small>Normal — #0A7A3B</small></div>
+    <div class="btnitem"><button class="btn btn-h" type="button">Book a Ride 😊</button><small>Hover — #086B34</small></div>
+    <div class="btnitem"><button class="btn btn-d" type="button" disabled>Book a Ride 😊</button><small>Disabled — #E5E7EB</small></div>
+  </div><p class="note" style="margin-top:8px">56px tall, 18px radius — easiest to tap. Green-led (trust), yellow kept as accent.</p></div>
+
+  <h2><span>4</span>Input</h2>
+  <div class="card">
+    <div class="field"><label for="d3a">Where are you going? (default)</label><input id="d3a" type="text" placeholder="Type park name, e.g. CMS"></div>
+    <div class="field"><label for="d3b">Focused state shown</label><input id="d3b" class="fs" type="text" value="CMS Park" placeholder="Type park name, e.g. CMS"><p class="note">Focused = thick green ring. Big text, friendly placeholder question.</p></div>
+  </div>
+</div>
+</body>
+</html>

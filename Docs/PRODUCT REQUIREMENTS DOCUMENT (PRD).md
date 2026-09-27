@@ -844,3 +844,18 @@ The product should always follow five principles:
 
 The long-term vision is to connect **passengers, Danfo drivers, bike riders, transport parks, and transport companies** across Nigerian cities through one simple service.
 
+---
+
+## Decision Log
+
+- **Database (Stage 3, 2026-09-27):** Decided to keep local Postgres 16 (Docker) with raw SQL via `pg` and no ORM, because it preserves the existing `schema.sql` guarantees for capacity transactions and single-use barcode scans with zero rewrite. SQLite (single-file, zero-install) was considered and rejected since it would require reworking Postgres-specific guards and seed data for little pilot benefit.
+
+---
+
+## Design Refinement Log
+
+- **Direction chosen:** design-3 (Friendly / Accessible) — cream background, Park Green primary buttons, large rounded targets and plain friendly wording, suiting first-time smartphone users and low-end devices.
+- **Refinement requested:** consolidate the three direction files (design-1/2/3.html) plus index.html into just one file.
+- **What changed:** deleted design-1.html, design-2.html, design-3.html and index.html; kept the Friendly/Accessible system as the single `design.html` in the repository root with palette swatches, typography scale, normal/hover/disabled buttons and default/focused inputs intact.
+- **Confirmed:** `design.html` is updated to match and is the sole style reference.
+
