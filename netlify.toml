@@ -1,0 +1,36 @@
+# 9JA Transport — Netlify: static Docs site, zero build, auto-deploy on push to main.
+[build]
+  publish = "Docs"
+  command = ""
+
+# Pretty URLs for the main pages
+[[redirects]]
+  from = "/app"
+  to = "/web-app-preview.html"
+  status = 200
+
+[[redirects]]
+  from = "/landing"
+  to = "/landing-page.html"
+  status = 200
+
+[[redirects]]
+  from = "/design"
+  to = "/design-system-preview.html"
+  status = 200
+
+[[redirects]]
+  from = "/screens"
+  to = "/app-screens-preview.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin-preview.html"
+  status = 200
+
+# Cache static assets briefly; HTML always fresh
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=60"
