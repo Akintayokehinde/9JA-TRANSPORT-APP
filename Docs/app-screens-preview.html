@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9ja Transport — App Screens Preview (Phases 4–9)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; background: #E5E7EB; color: #121212; padding: 24px; }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 26px; } .sub { color: #555; font-size: 14px; margin: 4px 0 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .phone { background: #fff; border-radius: 28px; border: 10px solid #121212; overflow: hidden; height: 640px; display: flex; flex-direction: column; }
+  .cap { font-weight: 800; font-size: 14px; padding: 10px 4px 0; }
+  .cap span { color: #6B7280; font-weight: 400; }
+  .bar { background: #FFC300; color: #121212; font-weight: 800; padding: 12px 14px; font-size: 15px; }
+  .bar.dark { background: #000; color: #fff; }
+  .body { padding: 14px; flex: 1; overflow: hidden; font-size: 14px; }
+  .btn { display: block; text-align: center; background: #FFC300; color: #121212; font-weight: 800; border-radius: 8px; padding: 13px; margin-top: 10px; }
+  .btn.ghost { background: #fff; border: 2px solid #121212; }
+  .btn.green { background: #0A7A3B; color: #fff; }
+  .btn.big { font-size: 19px; padding: 18px; border-radius: 14px; }
+  .inp { border: 1.5px solid #9AA0A6; border-radius: 8px; padding: 11px; margin-top: 8px; color: #6B7280; }
+  .card { border: 1px solid #E5E7EB; border-radius: 12px; padding: 10px; margin-top: 10px; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .fare { font-weight: 800; font-size: 17px; }
+  .mut { color: #6B7280; font-size: 12.5px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; margin-top: 5px; }
+  .g { background: #DCFAE6; color: #0A7A3B; } .a { background: #FEF0C7; color: #B54708; }
+  .slip { background: #FFF8E1; border: 2px dashed #121212; border-radius: 14px; padding: 12px; margin-top: 10px; }
+  .qr { width: 110px; height: 110px; background: #121212; color: #fff; border-radius: 8px; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-size: 11px; text-align: center; }
+  .vok { background: #0A7A3B; color: #fff; border-radius: 12px; padding: 14px; text-align: center; font-weight: 800; margin-top: 10px; }
+  .darkbody { background: #000; color: #fff; }
+  .tabs { display: flex; border-top: 1px solid #E5E7EB; font-size: 11px; font-weight: 700; }
+  .tabs div { flex: 1; text-align: center; padding: 9px 2px; color: #6B7280; }
+  .tabs .on { color: #121212; }
+  .stars { color: #FFC300; font-size: 22px; letter-spacing: 2px; }
+  code { background: #eee; padding: 0 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🟡 9ja Transport — App Screens</h1>
+<p class="sub">Phases 4–9 · Flutter 3.x · matches <code>app/lib/features/*</code> · Yellow #FFC300 · Park black mode · <a href="design-system-preview.html">Design system →</a></p>
+<div class="grid">
+
+<div><div class="cap">1 · Auth OTP <span>— auth_screen.dart</span></div><div class="phone"><div class="bar">9ja Transport — Login</div><div class="body"><div class="inp">Phone e.g. +234803…</div><div class="btn">Send OTP</div><div class="inp">OTP code</div><div class="btn">Confirm &amp; Continue</div><p class="mut" style="margin-top:10px">Firebase phone auth · 30s resend cooldown · test numbers in console</p></div></div></div>
+
+<div><div class="cap">2 · Search <span>— search_screen.dart</span></div><div class="phone"><div class="bar">Book a Ride</div><div class="body"><div class="btn">Search Ikeja → CMS (today)</div><div class="card"><div class="row"><div><b>Ikeja → CMS</b><div class="mut">8:30 AM · Danfo · 7 spaces left</div><span class="pill g">7 spaces left</span></div><div class="fare">₦1,500</div></div></div><div class="card"><div class="row"><div><b>Ikeja → CMS</b><div class="mut">12:00 PM · Danfo · 4 spaces left</div><span class="pill a">4 spaces left</span></div><div class="fare">₦1,500</div></div></div><p class="mut">Tap → Trip Detail · offline shows cached</p></div><div class="tabs"><div class="on">● Book</div><div>Bookings</div><div>Park</div><div>Driver</div><div>More</div></div></div></div>
+
+<div><div class="cap">3 · Trip Detail <span>— trip_detail_screen.dart</span></div><div class="phone"><div class="bar">Ikeja → CMS</div><div class="body"><b>Ikeja → CMS</b><div class="mut">8:30 AM · 7 spaces left</div><div class="card"><div class="row"><div><b>Musa K.</b> <span class="pill g">✓ VERIFIED</span><div class="mut">Danfo · KTU-123XY · ★4.8 (312)</div></div><div style="font-size:26px">👨🏾</div></div></div><div class="card"><div class="row"><span>Fare</span><b>₦1,500</b></div><div class="row"><span>Charge</span><b>₦100</b></div><div class="row"><span><b>Total</b></span><span class="fare">₦1,600</span></div><p class="mut">Cancel: &gt;6h full · 1–6h 50% · &lt;1h none</p></div><div class="inp">Passenger name</div><div class="btn">Pay Now — ₦1,600</div><div class="btn ghost">Reserve &amp; Pay at Park</div></div></div></div>
+
+<div><div class="cap">4 · Slip <span>— slip_screen.dart (offline)</span></div><div class="phone"><div class="bar">Transport Slip</div><div class="body"><div class="slip"><b>🎫 Digital Transport Slip</b><div class="mut">Adaeze O. · 9JA-7K2QXA</div><div class="mut">Ikeja → CMS · Today 8:30 AM</div><div class="mut">Musa K. · Danfo KTU-123XY</div><div class="qr">QR<br>{bid,tid,<br>nonce,code}</div><div style="text-align:center;font-weight:800;letter-spacing:2px">TRIP CODE: 7K2QXA</div><div class="mut" style="text-align:center">Saved offline · no internet needed</div></div><p class="mut" style="margin-top:8px">Show at park → scan → board any free seat</p></div></div></div>
+
+<div><div class="cap">5 · My Bookings <span>— my_bookings_screen.dart</span></div><div class="phone"><div class="bar">My Bookings</div><div class="body"><div class="card"><div class="row"><div><b>Ikeja → CMS</b><div class="mut">9JA-7K2QXA · paid · 8:30 AM</div><div class="mut">Full refund (minus charge)</div></div><span style="color:#D92D20;font-weight:800">Cancel</span></div></div><div class="card"><div class="row"><div><b>CMS → Ikeja</b><div class="mut">9JA-9PLM22 · reserved · 4:00 PM</div><div class="mut">50% refund</div></div><span style="color:#D92D20;font-weight:800">Cancel</span></div></div><p class="mut">Offline → saved slips + black banner</p></div><div class="tabs"><div>Book</div><div class="on">● Bookings</div><div>Park</div><div>Driver</div><div>More</div></div></div></div>
+
+<div><div class="cap">6 · Park Mode <span>— park_mode_screen.dart</span></div><div class="phone"><div class="bar dark">PARK MODE</div><div class="body darkbody"><div class="mut" style="color:#FFC300">IKEJA PARK · Today 14 trips</div><div style="font-size:20px;font-weight:800;margin:6px 0">Booked 14 · Arrived 12 · Left 2</div><div class="btn big">◉ SCAN BOOKING</div><div class="inp" style="color:#aaa">Or enter trip code… ✓</div><div class="vok">✓ VALID BOOKING<div class="mut" style="color:#fff">Adaeze O. → direct to bus</div></div><div class="card" style="background:#1F1F1F;border-color:#333"><b style="color:#fff">8:30 Ikeja→CMS</b><div class="mut">Booked 14 · Arrived 12 · scheduled</div></div></div></div></div>
+
+<div><div class="cap">7 · Driver <span>— driver_trips_screen.dart</span></div><div class="phone"><div class="bar">Driver — Today</div><div class="body"><div class="card"><b>Today's earnings</b><div class="mut">Completed: 3 · Pax: 38</div><div class="mut">Online ₦42,000 · Cash ₦15,000</div></div><div class="card"><div class="row"><div><b>8:30 Ikeja→CMS</b><div class="mut">Booked 14 · Arrived 12 · boarding</div></div><span class="pill g">Ready ▾</span></div></div><div class="card"><div class="row"><div><b>12:00 Ikeja→CMS</b><div class="mut">Booked 6 · Arrived 0 · scheduled</div></div><span class="pill a">scheduled</span></div></div></div></div></div>
+
+<div><div class="cap">8 · Pay + Notify <span>— payment/notifications</span></div><div class="phone"><div class="bar">Pay Now (test)</div><div class="body"><div class="inp">Email for receipt</div><div class="btn">Get Paystack checkout link</div><div class="card"><b>paystack.com/pay/9ja-xyz</b><div class="mut">Pay → paste reference → Verify</div></div><div class="btn green">I paid — Verify</div><div class="mut" style="margin-top:8px">Reserve path: cash at park → worker taps Cash received</div></div></div></div>
+
+<div><div class="cap">9 · Safety &amp; Support <span>— support_screen.dart</span></div><div class="phone"><div class="bar">Safety &amp; Support</div><div class="body"><div class="card"><b>Emergency</b><div class="mut">Call 112 or Lagos 767, then support</div><div style="margin-top:4px"><span class="pill a">112</span> <span class="pill a">767 Lagos</span></div></div><div class="card"><b>Share trip</b><div class="mut">I am on 9ja Ikeja→CMS, Musa KTU-123XY, 9JA-7K2QXA</div></div><div class="card"><b>Report a problem</b><div class="mut">Driver no-show · Wrong vehicle/fare · Payment · Safety…</div></div><div class="card"><b>How was your trip?</b><div class="stars">★★★★★</div><div class="btn">Submit rating</div></div></div></div></div>
+
+</div>
+<p class="sub" style="margin-top:20px">Source of truth is Flutter code in <code>app/lib/features/*</code>. This HTML is a static visual map. Open <code>design-system-preview.html</code> for tokens/components.</p>
+</div>
+</body>
+</html>

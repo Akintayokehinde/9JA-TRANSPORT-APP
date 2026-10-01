@@ -838,6 +838,36 @@ The product should always follow five principles:
 
 ---
 
+# **44\. Live Bus Tracking (major feature, post-pilot)**
+
+After a passenger books a trip and the bus starts the journey, the passenger can follow the bus live:
+
+* 📍 Passenger sees the bus moving live on a map.
+* 🚌 A bus icon shows the bus's current location.
+* 🛣️ The route from the departure park to the destination is displayed.
+* ⏱️ Passenger sees an estimated arrival time (ETA).
+* 🔔 Notifications for **"Bus has departed"**, **"Approaching your stop"**, and **"Bus has arrived"**.
+
+Example:
+
+Passenger books **Lagos → Ibadan**, Bus: ABC Transport, Departure: 8:00 AM. Once the bus leaves:
+
+**🚌 Your bus is on the way — Lagos → Ibadan.**
+Live location: bus moving along Lagos–Ibadan Expressway. ETA: 10:15 AM. Status: In transit.
+
+Rules:
+
+* Tracking is available **only while the trip is active** (`departed` → `completed`). Before departure show the static route; after completion stop publishing and hide live location.
+* The moving vehicle is rendered as the **yellow danfo bus** (brand marker, `app/assets/danfo_bus.svg`) on every platform.
+* There is exactly **one shared position per bus**: every passenger booked on the same trip reads the same `trips.last_lat/last_lng` row, so all phones show the same danfo at the same spot.
+* Only passengers **booked on that trip** (plus driver, assigned park worker, admin) may see live location.
+* If the driver's connection temporarily drops, show the **last known location with its age** ("last seen 3 min ago", grey bus icon) — never animate the bus as if it is still moving.
+* Driver's phone sends location pings (every ~10–15 seconds) only while the trip is active, to protect battery and data. Pings stop automatically at trip completion.
+* ETA starts simple (remaining distance ÷ recent average speed); no paid routing service required for the first version.
+* Location history is retained for a limited period (e.g. 30 days, for disputes/safety) then purged.
+
+---
+
 # **43\. Final Product Vision**
 
 9ja Transport should become a trusted digital transport service where a Nigerian passenger can open the app, find a route, reserve a space, pay or choose to pay at the park, receive a verified transport slip, arrive at the park, scan the barcode, identify the correct driver and vehicle, choose any available seat, and travel with greater confidence.

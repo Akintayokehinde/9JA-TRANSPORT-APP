@@ -1,0 +1,13 @@
+# Flutter / Firebase / Next.js
+.dart_tool/
+.build/
+.idea/
+*.iml
+node_modules/
+.next/
+functions/node_modules/
+.env
+.env.local
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart

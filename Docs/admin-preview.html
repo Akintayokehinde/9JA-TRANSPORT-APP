@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9ja Transport — Admin (preview) · localhost</title>
+<style>
+  body { font-family: sans-serif; padding: 24px; max-width: 1050px; margin: 0 auto; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+  th { text-align: left; background: #FFC300; } td, th { border: 1px solid #999; padding: 6px; }
+  .note { background: #FFF8E1; border: 1px dashed #333; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
+  button { cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>🟡 9ja Transport — Admin <small>(static preview — run <code>npm run dev</code> in <code>admin/</code> for live Postgres data)</small></h1>
+<div class="note">Live admin needs Node 20 + <code>DATABASE_URL</code>. This preview mirrors <code>admin/app/page.tsx</code> with pilot seed data so you can see the layout in your browser now.</div>
+<p>Today: <b>5 bookings · ₦7,500</b> collected · Refunds pending: <b>1</b></p>
+<h2>Pending drivers (1)</h2>
+<table><thead><tr><th>Name</th><th>Phone</th><th>License</th><th>Status</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>Musa K.</td><td>+2348030000001</td><td>LAG-DRV-88231</td><td>✅ verified</td><td><button>Suspend</button></td></tr>
+<tr><td>New Rider</td><td>+2348030000005</td><td>LAG-DRV-90012</td><td>⏳ pending</td><td><button>Approve</button></td></tr>
+</tbody></table>
+<h2>Fares (locked at booking — new bookings only)</h2>
+<table><thead><tr><th>Route</th><th>Current</th><th>New (kobo)</th></tr></thead>
+<tbody>
+<tr><td>Ikeja Park → CMS Park</td><td>₦1,500</td><td><input type="number" value="150000" style="width:110px"> <button>Update</button></td></tr>
+<tr><td>CMS Park → Ikeja Park</td><td>₦1,500</td><td><input type="number" value="150000" style="width:110px"> <button>Update</button></td></tr>
+</tbody></table>
+<h2>Refunds pending (1)</h2>
+<table><thead><tr><th>Booking</th><th>Passenger</th><th>Fare</th></tr></thead>
+<tbody><tr><td>9JA-ABC123</td><td>Adaeze O.</td><td>₦1,500</td></tr></tbody></table>
+<h2>Recent trips</h2>
+<table><thead><tr><th>Departs</th><th>Status</th><th>Booked</th><th>Arrived</th></tr></thead>
+<tbody>
+<tr><td>Today 8:30</td><td>boarding</td><td>14</td><td>12</td></tr>
+<tr><td>Today 12:00</td><td>scheduled</td><td>6</td><td>0</td></tr>
+</tbody></table>
+<h2>Complaints inbox</h2>
+<table><thead><tr><th>Category</th><th>Status</th><th>Action</th></tr></thead>
+<tbody><tr><td>Wrong fare</td><td>open</td><td><button>Resolve</button></td></tr></tbody></table>
+<hr>
+<p><a href="app-screens-preview.html">← App screens</a> · <a href="design-system-preview.html">← Design system</a></p>
+</body>
+</html>

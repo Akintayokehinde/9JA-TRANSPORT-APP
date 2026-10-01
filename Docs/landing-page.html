@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9ja Transport — Book your seat before you reach the park</title>
+<meta name="description" content="Search Danfo & bus trips, reserve a space, show your slip, board. Piloting in Lagos.">
+<style>
+  :root { --yel:#FFC300; --grn:#0A7A3B; --ink:#121212; --mut:#6B7280; --bg:#FFFDF4; --red:#D92D20; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter',-apple-system,'Segoe UI',Roboto,sans-serif; color: var(--ink); background: var(--bg); line-height: 1.55; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  nav.top { position: sticky; top: 0; z-index: 10; background: #121212; color: #fff; }
+  nav.top .wrap { display: flex; align-items: center; gap: 14px; padding-top: 10px; padding-bottom: 10px; }
+  .logo { font-weight: 800; font-size: 17px; } .logo span { color: var(--yel); }
+  nav.top a { color: #ddd; text-decoration: none; font-size: 14px; font-weight: 600; }
+  nav.top a:hover { color: var(--yel); }
+  .links { display: flex; gap: 16px; margin-left: auto; }
+  @media (max-width: 760px) { .links a:not(.cta) { display: none; } }
+  .cta { background: var(--yel); color: #121212 !important; padding: 9px 18px; border-radius: 8px; font-weight: 800; }
+  .hero { background: linear-gradient(180deg, #121212 0%, #232323 100%); color: #fff; overflow: hidden; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; padding: 56px 20px 64px; align-items: center; }
+  @media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } }
+  .hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.08; font-weight: 800; }
+  .hero h1 em { color: var(--yel); font-style: normal; }
+  .hero p { color: #ccc; font-size: 17px; margin: 14px 0 22px; max-width: 46ch; }
+  .btnrow { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-block; background: var(--yel); color: #121212; font-weight: 800; padding: 14px 26px; border-radius: 10px; text-decoration: none; font-size: 16px; border: none; cursor: pointer; }
+  .btn.ghost { background: transparent; color: #fff; border: 2px solid #555; }
+  .slip { background: #FFF8E1; color: #121212; border-radius: 16px; padding: 18px; border: 2px dashed #121212; max-width: 380px; margin-left: auto; transform: rotate(2deg); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+  .slip .qr { width: 110px; height: 110px; background: #121212; color: #fff; border-radius: 8px; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-size: 11px; text-align: center; }
+  .strip { background: var(--yel); font-weight: 700; font-size: 14px; }
+  .strip .wrap { display: flex; gap: 22px; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+  section.block { padding: 56px 0; }
+  section.block h2 { font-size: clamp(24px, 3.4vw, 34px); font-weight: 800; margin-bottom: 6px; }
+  section.block .lede { color: var(--mut); margin-bottom: 24px; max-width: 62ch; }
+  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .cards3 { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1px solid #E8E2CE; border-radius: 14px; padding: 20px; }
+  .card .n { font-size: 30px; }
+  .card h3 { margin: 8px 0 4px; font-size: 17px; }
+  .card p { color: var(--mut); font-size: 14.5px; }
+  .dark { background: #0B0B0B; color: #fff; border-radius: 18px; padding: 28px; }
+  .route { position: relative; height: 26px; background: #2a2a2a; border-radius: 999px; margin: 40px 0 34px; }
+  .route .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 30%; background: var(--yel); border-radius: 999px; }
+  .route .bus { position: absolute; top: -32px; left: 30%; width: 66px; transform: translateX(-50%); }
+  .route .lbl { position: absolute; top: 32px; font-size: 12.5px; color: #bbb; }
+  .eta { display: inline-block; background: var(--grn); color: #fff; font-weight: 800; padding: 6px 14px; border-radius: 999px; margin-top: 8px; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .cols2 { grid-template-columns: 1fr; } }
+  .tick { list-style: none; } .tick li { padding: 7px 0 7px 30px; position: relative; font-size: 15px; }
+  .tick li::before { content: '✓'; position: absolute; left: 0; color: var(--grn); font-weight: 800; }
+  table.fares { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; font-size: 15px; }
+  table.fares td, table.fares th { border-bottom: 1px solid #eee; padding: 12px 14px; text-align: left; }
+  table.fares th { background: #121212; color: var(--yel); }
+  .safety { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .safety { grid-template-columns: repeat(2, 1fr); } }
+  .safety .card { text-align: center; } .safety .ic { font-size: 30px; }
+  .pilot { background: var(--yel); border-radius: 18px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+  @media (max-width: 760px) { .pilot { grid-template-columns: 1fr; } }
+  .pilot input, .pilot select { width: 100%; border: 2px solid #121212; border-radius: 8px; padding: 12px; font-size: 15px; margin-top: 8px; background: #fff; }
+  .pilot .btn { background: #121212; color: var(--yel); width: 100%; }
+  details.faq { background: #fff; border: 1px solid #E8E2CE; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  details.faq summary { font-weight: 800; cursor: pointer; }
+  details.faq p { color: var(--mut); margin-top: 6px; font-size: 14.5px; }
+  footer { background: #121212; color: #bbb; font-size: 13.5px; }
+  footer .wrap { padding-top: 26px; padding-bottom: 26px; display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; }
+  footer b { color: #fff; }
+</style>
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <div class="logo">🟡 9ja <span>Transport</span></div>
+  <div class="links">
+    <a href="#how">How it works</a><a href="#parks">For Parks</a><a href="#fares">Fares</a><a href="#faq">FAQ</a>
+    <a class="cta" href="#pilot">Book a Ride</a>
+  </div>
+</div></nav>
+
+<div class="hero"><div class="wrap">
+  <div>
+    <h1>Book your seat <em>before</em> you reach the park.</h1>
+    <p>Search Danfo &amp; bus trips, reserve a space, pay now or cash at the park. Show your slip, get scanned, board any free seat.</p>
+    <div class="btnrow">
+      <a class="btn" href="#pilot">Book a Ride</a>
+      <a class="btn ghost" href="#how">See how it works</a>
+    </div>
+  </div>
+  <div class="slip">
+    <b>🎫 Digital Transport Slip</b>
+    <div style="font-size:13px;color:#6B7280">Adaeze O. · 9JA-7K2QXA</div>
+    <div style="font-size:13px;color:#6B7280">Ikeja → CMS · Today 8:30 AM · ₦1,500 paid</div>
+    <div style="font-size:13px;color:#6B7280">Musa K. · Danfo KTU-123XY</div>
+    <div class="qr">QR<br>{bid · tid<br>nonce · code}</div>
+    <div style="text-align:center;font-weight:800;letter-spacing:2px">TRIP CODE: 7K2QXA</div>
+  </div>
+</div></div>
+
+<div class="strip"><div class="wrap">
+  <span>📍 Piloting in Lagos</span><span>🅿 Ikeja Park</span><span>🅿 CMS Park</span><span>★ 4.8 pilot rating</span><span>💵 Cash accepted</span>
+</div></div>
+
+<section class="block" id="how"><div class="wrap">
+  <h2>How it works</h2>
+  <p class="lede">Three steps. No instructions needed — if you can use WhatsApp, you can use 9ja Transport.</p>
+  <div class="cards3">
+    <div class="card"><div class="n">①</div><h3>Search &amp; pick a trip</h3><p>Enter where you're going. See departure time, fare, vehicle and spaces left.</p></div>
+    <div class="card"><div class="n">②</div><h3>Pay now or reserve</h3><p>Pay online with Paystack, or reserve and pay cash when you arrive. Your fare is locked.</p></div>
+    <div class="card"><div class="n">③</div><h3>Show slip → scan → board</h3><p>Your slip works even without internet. The park worker scans it, you pick any free seat.</p></div>
+  </div>
+</div></section>
+
+<section class="block" style="padding-top:0"><div class="wrap">
+  <div class="dark">
+    <h2 style="color:#fff">🛰 Watch your danfo move, live.</h2>
+    <p style="color:#bbb">After departure, follow the yellow danfo on the map with live ETA — only while your trip is active.</p>
+    <div class="route">
+      <div class="fill" id="lpFill"></div>
+      <div class="bus" id="lpBus">
+        <svg viewBox="0 0 96 56" style="width:100%;display:block">
+          <ellipse cx="48" cy="50" rx="40" ry="4.5" fill="#000" opacity="0.35"/>
+          <path d="M6 44 L8 20 Q8.5 12 16 11 L30 9 Q38 4 50 4 L74 4 Q84 4 86 14 L90 40 Q90.5 44 86 44 Z" fill="#FFC300" stroke="#121212" stroke-width="2.5"/>
+          <path d="M13 21 L15 13 L29 12 L29 26 L13.5 26 Z" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+          <rect x="33" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+          <rect x="48" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+          <rect x="63" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+          <rect x="7" y="30" width="82" height="4" fill="#121212"/>
+          <circle cx="10" cy="39" r="2.6" fill="#FFF8E1" stroke="#121212" stroke-width="1.5"/>
+          <rect x="4" y="43" width="88" height="3.4" rx="1.5" fill="#121212"/>
+          <circle cx="26" cy="45" r="7" fill="#121212"/><circle cx="26" cy="45" r="3" fill="#9AA0A6"/>
+          <circle cx="72" cy="45" r="7" fill="#121212"/><circle cx="72" cy="45" r="3" fill="#9AA0A6"/>
+        </svg>
+      </div>
+      <span class="lbl" style="left:0">📍 Ikeja</span>
+      <span class="lbl" style="right:0">CMS 📍</span>
+    </div>
+    <span class="eta" id="lpEta">● In transit · ETA 24 min</span>
+  </div>
+</div></section>
+
+<section class="block" style="padding-top:0"><div class="wrap">
+  <div class="cols2">
+    <div>
+      <h2>For passengers</h2>
+      <ul class="tick">
+        <li>Fare shown <b>before</b> you pay — locked at booking</li>
+        <li>Driver photo, name &amp; plate <b>before</b> you board</li>
+        <li>Slip saved on your phone — works with poor internet</li>
+        <li>Online payment never compulsory — cash welcome</li>
+        <li>Clear refunds: &gt;6h full · 1–6h half · 15-min no-show rule</li>
+      </ul>
+    </div>
+    <div id="parks">
+      <h2>For drivers &amp; parks</h2>
+      <ul class="tick">
+        <li>See how many passengers are coming <b>before</b> departure</li>
+        <li>Live arrival counts: booked · arrived · waiting</li>
+        <li>Booking queue keeps boarding orderly</li>
+        <li>Daily cash close-out against physical cash</li>
+        <li>Verified badge that builds passenger trust</li>
+      </ul>
+      <a class="btn" href="#pilot" style="margin-top:14px">Register your park</a>
+    </div>
+  </div>
+</div></section>
+
+<section class="block" id="fares" style="padding-top:0"><div class="wrap">
+  <h2>Honest fares</h2>
+  <p class="lede">What you see is what you pay. Once you book, your fare never changes under you.</p>
+  <table class="fares">
+    <tr><th>Route</th><th>Vehicle</th><th>Fare</th></tr>
+    <tr><td>Ikeja → CMS</td><td>Danfo</td><td><b>₦1,500</b></td></tr>
+    <tr><td>CMS → Ikeja</td><td>Danfo</td><td><b>₦1,500</b></td></tr>
+    <tr><td>Ikeja → Oshodi</td><td>Minibus</td><td><b>₦800</b></td></tr>
+  </table>
+</div></section>
+
+<section class="block" style="padding-top:0"><div class="wrap">
+  <h2>Safety first</h2>
+  <div class="safety" style="margin-top:16px">
+    <div class="card"><div class="ic">✅</div><b>Verified drivers</b><p>Checked identity, vehicle &amp; park.</p></div>
+    <div class="card"><div class="ic">📤</div><b>Share trip</b><p>Family follows your journey.</p></div>
+    <div class="card"><div class="ic">🆘</div><b>Emergency</b><p>112 national, 767 Lagos.</p></div>
+    <div class="card"><div class="ic">📝</div><b>Report a problem</b><p>Answered by real support.</p></div>
+  </div>
+</div></section>
+
+<section class="block" id="pilot" style="padding-top:0"><div class="wrap">
+  <div class="pilot">
+    <div>
+      <h2>We're live in 2 Lagos parks.</h2>
+      <p>Get notified when your route opens — drop your number, pick your route.</p>
+    </div>
+    <div>
+      <input id="wlPhone" placeholder="Phone e.g. +234803…" inputmode="tel">
+      <select id="wlRoute">
+        <option>Ikeja → CMS</option><option>CMS → Ikeja</option>
+        <option>Ikeja → Oshodi</option><option>My route isn't listed</option>
+      </select>
+      <button class="btn" onclick="joinWaitlist()">Notify me</button>
+      <p id="wlMsg" style="margin-top:8px;font-weight:700"></p>
+    </div>
+  </div>
+</div></section>
+
+<section class="block" id="faq" style="padding-top:0"><div class="wrap">
+  <h2>Questions</h2>
+  <div style="margin-top:16px">
+    <details class="faq"><summary>Do I need internet at the park?</summary><p>No. Your slip is saved on your phone and opens offline. The worker's scanner confirms it.</p></details>
+    <details class="faq"><summary>Must I pay online?</summary><p>No. Reserve your space and pay cash when you arrive. Online payment is optional.</p></details>
+    <details class="faq"><summary>What if I miss the bus?</summary><p>There's a 15-minute grace period after departure. After that your space may be given to someone else.</p></details>
+    <details class="faq"><summary>How do I know my driver?</summary><p>You see the driver's photo, name, phone, vehicle and plate number before you board — only verified drivers operate.</p></details>
+    <details class="faq"><summary>What if the fare changes after I book?</summary><p>It can't. Your fare is locked at the moment you book.</p></details>
+    <details class="faq"><summary>How do refunds work?</summary><p>Cancel more than 6 hours before: full refund (minus small charge). 1–6 hours: half. Under 1 hour: no refund.</p></details>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><b>🟡 9ja Transport</b><br>Made for Nigerian parks.<br>Support: 8am–8pm daily.</div>
+  <div><b>Pilot parks</b><br>Ikeja Park, Ikeja<br>CMS Park, Lagos Island</div>
+  <div><b>Explore</b><br><a href="/web-app-preview.html" style="color:#FFC300">Try the web demo</a><br><a href="/app-screens-preview.html" style="color:#FFC300">App screens</a></div>
+</div></footer>
+
+<script>
+  // Animated danfo teaser
+  let p = 30;
+  setInterval(() => {
+    p = p >= 96 ? 4 : p + 0.6;
+    document.getElementById('lpBus').style.left = p + '%';
+    document.getElementById('lpFill').style.width = p + '%';
+    document.getElementById('lpEta').textContent =
+      '● In transit · ETA ' + Math.max(1, Math.round(28 * (100 - p) / 100)) + ' min';
+  }, 120);
+  // Waitlist (demo: local only)
+  function joinWaitlist() {
+    const ph = document.getElementById('wlPhone').value.trim();
+    if (ph.length < 7) { document.getElementById('wlMsg').textContent = 'Please enter a valid phone number.'; return; }
+    const list = JSON.parse(localStorage.getItem('9ja_waitlist') || '[]');
+    list.push({ phone: ph, route: document.getElementById('wlRoute').value, at: new Date().toISOString() });
+    localStorage.setItem('9ja_waitlist', JSON.stringify(list));
+    document.getElementById('wlMsg').textContent = '✅ You\'re on the list — we\'ll text you when your route opens.';
+    document.getElementById('wlPhone').value = '';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 56">
+  <!-- 9ja Transport danfo marker: yellow VW-style bus, black stripe -->
+  <ellipse cx="48" cy="50" rx="40" ry="4.5" fill="#000" opacity="0.25"/>
+  <!-- body -->
+  <path d="M6 44 L8 20 Q8.5 12 16 11 L30 9 Q38 4 50 4 L74 4 Q84 4 86 14 L90 40 Q90.5 44 86 44 Z" fill="#FFC300" stroke="#121212" stroke-width="2.5"/>
+  <!-- windshield -->
+  <path d="M13 21 L15 13 L29 12 L29 26 L13.5 26 Z" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+  <!-- side windows -->
+  <rect x="33" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+  <rect x="48" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+  <rect x="63" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+  <rect x="78" y="15" width="7" height="10" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
+  <!-- black danfo stripe -->
+  <rect x="7" y="30" width="82" height="4" fill="#121212"/>
+  <rect x="7" y="35.5" width="82" height="1.6" fill="#121212"/>
+  <!-- headlight + bumper -->
+  <circle cx="10" cy="39" r="2.6" fill="#FFF8E1" stroke="#121212" stroke-width="1.5"/>
+  <rect x="4" y="43" width="88" height="3.4" rx="1.5" fill="#121212"/>
+  <!-- wheels -->
+  <circle cx="26" cy="45" r="7" fill="#121212"/><circle cx="26" cy="45" r="3" fill="#9AA0A6"/>
+  <circle cx="72" cy="45" r="7" fill="#121212"/><circle cx="72" cy="45" r="3" fill="#9AA0A6"/>
+</svg>

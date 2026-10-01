@@ -1,0 +1,41 @@
+name: 9ja_transport
+description: 9ja Transport — Danfo/bus/bike booking (Flutter 3.x + Firebase + Postgres via Functions)
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_functions: ^5.1.3
+  firebase_storage: ^12.3.6
+  firebase_messaging: ^15.1.5
+  firebase_app_check: ^0.3.1+1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.1.1
+  url_launcher: ^6.3.1
+  geolocator: ^13.0.2
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+  google_maps_flutter: ^2.9.0
+  flutter_svg: ^2.0.10
+  connectivity_plus: ^6.1.0
+  intl: ^0.19.0
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.9
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/danfo_bus.svg
