@@ -30,6 +30,9 @@ Expire past-grace bookings; FCM 1h-before to opted-in.
 
 ## Payments (Paystack live-ready + Flutterwave fallback)
 - `paystackInit` / `verifyPaystack` / `paystackWebhook` (HMAC-SHA512), `flutterwaveInit` / `verifyFlutterwave` / `flutterwaveWebhook`. Live cutover = `sk_test`→`sk_live` + dashboard webhook URL (see `API-INTEGRATIONS.md`).
+- `paystackInit` takes `purpose booking|topup` (+`amountKobo` for top-up) and `channel: 'card'` to lock the Bank Card option to card-only checkout.
+- Wallet: `myProfile` (profile + balance), `walletBalance`, `walletHistory`, `payWithWallet({bookingId})` (atomic deduct + ledger + paid), top-up credit via webhook/verify metadata (`type=topup`), idempotent per reference.
+- Bank Card: `cardAttempt({bookingId, last4})` (passenger, pending) → `confirmCardPayment({bookingId})` (driver/worker same-park, flips to paid + receipt); queue surfaces pending `card_last4`.
 
 ## Messaging (Termii SMS + SMTP, best-effort)
 - Auto on booking confirm / cancel+refund / payment receipt / cash receipt. Missing keys = skipped, never blocks.

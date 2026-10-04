@@ -8,6 +8,7 @@ import 'core/network/functions_client.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/booking/my_bookings_screen.dart';
+import 'features/dashboard/dashboard_screen.dart';
 import 'features/verify/park_mode_screen.dart';
 import 'features/driver/driver_trips_screen.dart';
 import 'features/payments/notifications_screen.dart';
@@ -36,7 +37,7 @@ class NineJaApp extends StatelessWidget {
   }
 }
 
-/// Bottom tabs: Book, Bookings, Park Mode, Driver, More.
+/// Bottom tabs: Book, Bookings, Dashboard (profile/wallet/history/support), Park, Driver, More.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
   @override
@@ -45,7 +46,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int idx = 0;
-  static const screens = [SearchScreen(), MyBookingsScreen(), ParkModeScreen(), DriverTripsScreen(), _MoreScreen()];
+  static const screens = [SearchScreen(), MyBookingsScreen(), DashboardScreen(), ParkModeScreen(), DriverTripsScreen(), _MoreScreen()];
 
   @override
   void initState() {
@@ -62,10 +63,12 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: idx,
         type: BottomNavigationBarType.fixed,
+        selectedFontSize: 11, unselectedFontSize: 11,
         onTap: (i) => setState(() => idx = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Book'),
-          BottomNavigationBarItem(icon: Icon(Icons.confirmation_number), label: 'Bookings'),
+          BottomNavigationBarItem(icon: Icon(Icons.confirmation_number), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
           BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: 'Park'),
           BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Driver'),
           BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),

@@ -7,6 +7,8 @@ Tables: `users(id=Firebase uid)`, `parks`, `routes`, `vehicles`, `drivers(user_i
 
 Auth (migration `database/migration_auth.sql`): `users` += `first_name/last_name/username` (unique), `email` unique, `email_verified/phone_verified`. Passwords live ONLY in Firebase Auth. `otp_codes(user_id, channel email|sms, code_hash SHA-256, expires 10 min, attempts ≤5, consumed)` — email OTPs; SMS rides Firebase client verify + link.
 
+Wallet (migration `database/migration_wallet.sql`): `wallets(user_id, balance_kobo)` + ledger `wallet_transactions(user_id, kind fund|pay|refund, amount_kobo, reference unique, booking_id)`. Top-ups via Paystack `purpose=topup` (webhook/verify credit idempotently); trip payment via `payWithWallet` atomic tx; cancels of wallet-paid bookings refund to wallet.
+
 Key integrity:
 - Anti-overbooking: `SELECT trips … FOR UPDATE` in `createBooking` tx, check `booked_count+seats<=capacity`.
 - Single-use QR: `UNIQUE … WHERE result='valid'` on scans + tx check in `verifyScan`.

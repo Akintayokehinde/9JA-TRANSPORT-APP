@@ -54,6 +54,12 @@ class _TripQueueScreenState extends State<TripQueueScreen> {
                     final b = Map<String, dynamic>.from(en.value as Map);
                     final isArrived = ['arrived', 'boarded'].contains(b['booking_status']);
                     final paid = b['payment_status'] == 'paid';
+                    final cardLast4 = b['card_last4']?.toString();
+                    final payLabel = paid
+                        ? 'paid'
+                        : cardLast4 != null
+                            ? 'CARD ••••$cardLast4 — tap Confirm'
+                            : 'UNPAID cash';
                     return Card(
                       color: isArrived ? const Color(0xFF0A3D22) : const Color(0xFF1F1F1F),
                       child: ListTile(
@@ -61,16 +67,32 @@ class _TripQueueScreenState extends State<TripQueueScreen> {
                           style: const TextStyle(color: Color(0xFFFFC300), fontWeight: FontWeight.w800)),
                         title: Text('${b['passenger_name']} ×${b['seats']}',
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                        subtitle: Text('${b['booking_no']} · ${isArrived ? 'Arrived' : 'Waiting'} · ${paid ? 'paid' : 'UNPAID cash'}',
+                        subtitle: Text('${b['booking_no']} · ${isArrived ? 'Arrived' : 'Waiting'} · $payLabel',
                           style: const TextStyle(color: Colors.grey)),
                         trailing: paid
                             ? const Icon(Icons.check_circle, color: Color(0xFF0A7A3B))
-                            : TextButton(
-                                onPressed: () async {
-                                  await FunctionsClient().markCashReceived(b['id'].toString());
-                                  _load();
-                                },
-                                child: const Text('Cash?', style: TextStyle(color: Color(0xFFFFC300)))),
+                            : cardLast4 != null
+                                ? TextButton(
+                                    onPressed: () async {
+                                      final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+                                        title: const Text('Confirm card payment?'),
+                                        content: Text('${b['passenger_name']} · ${b['booking_no']} · card ••••$cardLast4.\nConfirm only after verifying with the passenger.'),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Not yet')),
+                                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm')),
+                                        ]));
+                                      if (ok == true) {
+                                        await FunctionsClient().confirmCardPayment(b['id'].toString());
+                                        _load();
+                                      }
+                                    },
+                                    child: Text('Card ••••$cardLast4 — Confirm', style: const TextStyle(color: Color(0xFFFFC300))))
+                                : TextButton(
+                                    onPressed: () async {
+                                      await FunctionsClient().markCashReceived(b['id'].toString());
+                                      _load();
+                                    },
+                                    child: const Text('Cash?', style: TextStyle(color: Color(0xFFFFC300)))),
                       ),
                     );
                   }),

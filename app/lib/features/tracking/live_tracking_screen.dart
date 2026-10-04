@@ -94,42 +94,115 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   ? Center(child: Text(
                       'Map tiles need internet.\nBus last seen at ${pos!['lat']}, ${pos!['lng']}',
                       textAlign: TextAlign.center))
-                  : _useGoogle
-                      ? _GoogleBusMap(
-                          lat: (pos!['lat'] as num).toDouble(),
-                          lng: (pos!['lng'] as num).toDouble(),
-                          dimmed: isStale,
-                        )
-                      : FlutterMap(
-                      mapController: mapCtl,
-                      options: MapOptions(
-                        initialCenter: LatLng((pos!['lat'] as num).toDouble(), (pos!['lng'] as num).toDouble()),
-                        initialZoom: 13,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          errorTileCallback: (_, __) { if (!mapFailed) setState(() => mapFailed = true); },
-                        ),
-                        MarkerLayer(markers: [
-                          Marker(
-                            point: LatLng((pos!['lat'] as num).toDouble(), (pos!['lng'] as num).toDouble()),
-                            width: 72, height: 72,
-                            // The moving vehicle is always the danfo bus: one shared
-                            // trips.last_* position, so every booked passenger sees
-                            // the same bus at the same spot.
-                            child: Opacity(
-                              opacity: isStale ? 0.45 : 1.0,
-                              child: SvgPicture.asset(
-                                'assets/danfo_bus.svg',
-                                placeholderBuilder: (_) =>
-                                  const Text('🚌', style: TextStyle(fontSize: 36)),
+                      : Stack(
+                          children: [
+                            _useGoogle
+                                ? _GoogleBusMap(
+                                    lat: (pos!['lat'] as num).toDouble(),
+                                    lng: (pos!['lng'] as num).toDouble(),
+                                    dimmed: isStale,
+                                  )
+                                : FlutterMap(
+                                mapController: mapCtl,
+                                options: MapOptions(
+                                  initialCenter: LatLng((pos!['lat'] as num).toDouble(), (pos!['lng'] as num).toDouble()),
+                                  initialZoom: 13,
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    errorTileCallback: (_, __) { if (!mapFailed) setState(() => mapFailed = true); },
+                                  ),
+                                  // Planned route (static corridor, same shape as backend park coords).
+                                  PolylineLayer(polylines: [
+                                    Polyline(
+                                      points: const [
+                                        LatLng(6.6018, 3.3515), LatLng(6.5785, 3.3685),
+                                        LatLng(6.5520, 3.3790), LatLng(6.5050, 3.3880),
+                                        LatLng(6.4620, 3.3935), LatLng(6.4458, 3.3958),
+                                      ],
+                                      strokeWidth: 4, color: const Color(0xFFFFC300),
+                                    ),
+                                  ]),
+                                  MarkerLayer(markers: [
+                                    Marker(
+                                      point: LatLng((pos!['lat'] as num).toDouble(), (pos!['lng'] as num).toDouble()),
+                                      width: 72, height: 72,
+                                      // The moving vehicle is always the danfo bus: one shared
+                                      // trips.last_* position, so every booked passenger sees
+                                      // the same bus at the same spot.
+                                      child: Opacity(
+                                        opacity: isStale ? 0.45 : 1.0,
+                                        child: SvgPicture.asset(
+                                          'assets/danfo_bus.svg',
+                                          placeholderBuilder: (_) =>
+                                            const Text('🚌', style: TextStyle(fontSize: 36)),
+                                        ),
+                                      ),
+                                    ),
+                                  ]),
+                                ],
+                              ),
+                            // Reference-style info card over the map: trip, status, schedule, actions.
+                            Positioned(
+                              left: 12, right: 12, bottom: 12,
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(widget.title,
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isStale
+                                                  ? const Color(0xFF6B7280)
+                                                  : const Color(0xFFDCFAE6),
+                                              borderRadius: BorderRadius.circular(999)),
+                                            child: Text(
+                                              isStale ? 'Last known location' : 'On the way to location',
+                                              style: TextStyle(
+                                                fontSize: 12, fontWeight: FontWeight.w800,
+                                                color: isStale ? Colors.white : const Color(0xFF0A7A3B)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Schedule: ${trip?['departs_at'] ?? '—'} · ETA ${etaMin == null ? '…' : '$etaMin min'}',
+                                        style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+                                      const SizedBox(height: 8),
+                                      Row(children: [
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: null, // wired to driver phone at pilot (tripDetail.driver_phone)
+                                            icon: const Icon(Icons.call, size: 16),
+                                            label: const Text('Call')),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: () => Navigator.of(context).maybePop(),
+                                            icon: const Icon(Icons.receipt_long, size: 16),
+                                            label: const Text('Details')),
+                                        ),
+                                      ]),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ]),
-                      ],
-                    ),
+                          ],
+                        ),
         ),
         if (error != null)
           Padding(padding: const EdgeInsets.all(8),

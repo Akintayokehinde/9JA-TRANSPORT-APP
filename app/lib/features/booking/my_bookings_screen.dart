@@ -4,7 +4,8 @@ import '../../core/network/functions_client.dart';
 import '../../core/storage/hive_boxes.dart';
 import '../tracking/live_tracking_screen.dart';
 
-/// My Bookings + cancel with refund preview (PRD §10). Falls back to Hive slips offline.
+/// Booking History + red Delete with "Are you sure?" YES (green) / NO (red).
+/// Falls back to Hive slips offline. Server still applies the refund table on delete.
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
   @override
@@ -47,21 +48,29 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     } catch (_) { return 'See cancel rules'; }
   }
 
-  Future<void> _cancel(Map b) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-      title: const Text('Cancel booking?'),
-      content: Text(_refundPreview(b)),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep')),
-        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Cancel booking'))],
+  Future<void> _askDelete(Map b) async {
+    final yes = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+      title: const Text('Are you sure you want to Delete?'),
+      content: Text('${b['booking_no']}\n${_refundPreview(b)}'),
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: const Color(0xFF0A7A3B), foregroundColor: Colors.white),
+          onPressed: () => Navigator.pop(context, true), child: const Text('YES')),
+        TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: const Color(0xFFD92D20), foregroundColor: Colors.white),
+          onPressed: () => Navigator.pop(context, false), child: const Text('NO')),
+      ],
     ));
-    if (ok != true) return;
+    if (yes != true) return;
     try {
       final res = await api.cancelBooking(b['id'].toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cancelled · refund: ${res['refundKobo']} kobo')));
+        SnackBar(content: Text('Deleted · refund: ${res['refundKobo']} kobo')));
       _load();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Cancel failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
     }
   }
 
@@ -69,7 +78,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
-      appBar: AppBar(title: const Text('My Bookings')),
+      appBar: AppBar(title: const Text('Booking History')),
       body: Column(children: [
         if (offline) Container(width: double.infinity, padding: const EdgeInsets.all(10),
           color: Colors.black, child: const Text('📴 Offline — showing saved slips',
@@ -92,7 +101,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                               title: "${b['from_park']} → ${b['to_park']}"))),
                           child: const Text('Track 🚌'))
                       : (b['booking_status'] == 'reserved' || b['booking_status'] == 'paid')
-                          ? TextButton(onPressed: () => _cancel(b), child: const Text('Cancel'))
+                          ? TextButton(
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFFD92D20)),
+                              onPressed: () => _askDelete(b), child: const Text('Delete'))
                           : null,
                 ));
               })),

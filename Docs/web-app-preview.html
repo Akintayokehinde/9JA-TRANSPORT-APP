@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>9ja Transport — Web App (demo)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root { --yel:#FFC300; --grn:#0A7A3B; --ink:#121212; --mut:#6B7280; --bg:#F3F4F6; --red:#D92D20; --amb:#F79009; --info:#175CD3; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,8 +56,9 @@
   <h1>🟡 9ja Transport</h1><span class="demo">WEB DEMO · in-browser, no install</span>
   <nav>
     <button data-tab="book" class="on">Book a Ride</button>
-    <button data-tab="bookings">My Bookings <span id="bkCount"></span></button>
-    <button data-tab="track">Track Bus</button>
+    <button data-tab="bookings">Booking History <span id="bkCount"></span></button>
+    <button data-tab="dash">Dashboard</button>
+    <button data-tab="track">Live Tracking</button>
     <button data-tab="park">Park Mode</button>
     <button data-tab="driver">Driver</button>
     <button data-tab="support">Support</button>
@@ -71,8 +74,8 @@
       <div class="card">
         <h2>Find a trip</h2>
         <div class="grid2">
-          <div><label>From</label><select id="from"><option value="ikeja">Ikeja Park</option><option value="cms">CMS Park</option></select></div>
-          <div><label>To</label><select id="to"><option value="cms">CMS Park</option><option value="ikeja">Ikeja Park</option></select></div>
+          <div><label>From</label><select id="from"></select></div>
+          <div><label>To</label><select id="to"></select></div>
         </div>
         <label>Date</label><input type="date" id="date">
         <label>Passengers</label><input type="number" id="pax" value="1" min="1" max="10">
@@ -80,7 +83,7 @@
         <label style="margin-top:14px"><input type="checkbox" id="simOff" style="width:auto" onchange="toggleOff()"> Simulate offline (cached results only)</label>
       </div>
       <div class="card">
-        <h2>Results</h2>
+        <h2>Available Trips</h2>
         <div id="results"><p class="mut">Search to see today’s trips.</p></div>
       </div>
     </div>
@@ -89,36 +92,57 @@
 
   <!-- BOOKINGS -->
   <section id="tab-bookings" class="hidden">
-    <div class="card"><h2>My bookings</h2><div id="myb"></div></div>
+    <div class="card"><h2>Booking History</h2><div id="myb"></div></div>
+    <div id="delModal" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50">
+      <div style="background:#fff;border-radius:14px;padding:24px;max-width:340px;text-align:center">
+        <h3>Are you sure you want to Delete?</h3>
+        <p class="mut" id="delSub"></p>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn green" style="flex:1" id="delYes">YES</button>
+          <button class="btn red" style="flex:1" id="delNo">NO</button>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <!-- TRACK -->
+  <!-- DASHBOARD -->
+  <section id="tab-dash" class="hidden">
+    <div class="card"><h2>Profile</h2><div id="dashProfile"></div></div>
+    <div class="card" style="background:#FFF8E1"><h2>9JA Wallet</h2>
+      <div class="fare" id="dashBal" style="font-size:30px">₦0</div>
+      <div class="grid2">
+        <div><label>Fund amount ₦ (min 100)</label><input id="fundAmt" type="number" value="2000" min="100"></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="fundWallet()">Fund wallet</button></div>
+      </div>
+      <p class="mut">Demo top-up credits instantly (real app: Paystack checkout → verify).</p>
+    </div>
+    <div class="card"><h2>Transaction history</h2><div id="dashTx"></div></div>
+    <div class="card"><h2>Support</h2>
+      <button class="btn ghost" onclick="document.querySelector('[data-tab=support]').click()">Emergencies, complaints, ratings</button>
+    </div>
+  </section>
+
+  <!-- TRACK (reference: live map fills card, danfo moves, info card overlays) -->
   <section id="tab-track" class="hidden">
     <div class="card">
-      <h2>🚌 Your bus is on the way <span class="mut">— Lagos → Ibadan demo (Ikeja → CMS data same shape)</span></h2>
-      <div id="trkBanner" class="banner" style="background:#0A7A3B;color:#fff">● Bus moving along Lagos–Ibadan Expressway · ETA <b id="trkEta">135 min</b> · In transit</div>
-      <div style="position:relative;height:26px;background:#E5E7EB;border-radius:999px;margin:14px 0">
-        <div id="trkBar" style="position:absolute;left:0;top:0;bottom:0;width:5%;background:#FFC300;border-radius:999px"></div>
-        <div id="trkBus" style="position:absolute;top:-30px;left:5%;width:64px;transition:left 1s;transform:translateX(-50%)">
-          <svg viewBox="0 0 96 56" style="width:100%;display:block">
-            <ellipse cx="48" cy="50" rx="40" ry="4.5" fill="#000" opacity="0.25"/>
-            <path d="M6 44 L8 20 Q8.5 12 16 11 L30 9 Q38 4 50 4 L74 4 Q84 4 86 14 L90 40 Q90.5 44 86 44 Z" fill="#FFC300" stroke="#121212" stroke-width="2.5"/>
-            <path d="M13 21 L15 13 L29 12 L29 26 L13.5 26 Z" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
-            <rect x="33" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
-            <rect x="48" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
-            <rect x="63" y="12" width="12" height="13" rx="1.5" fill="#BFD9E8" stroke="#121212" stroke-width="2"/>
-            <rect x="7" y="30" width="82" height="4" fill="#121212"/>
-            <circle cx="10" cy="39" r="2.6" fill="#FFF8E1" stroke="#121212" stroke-width="1.5"/>
-            <rect x="4" y="43" width="88" height="3.4" rx="1.5" fill="#121212"/>
-            <circle cx="26" cy="45" r="7" fill="#121212"/><circle cx="26" cy="45" r="3" fill="#9AA0A6"/>
-            <circle cx="72" cy="45" r="7" fill="#121212"/><circle cx="72" cy="45" r="3" fill="#9AA0A6"/>
-          </svg>
+      <h2>🚌 Your bus is on the way <span class="mut">— Ikeja → CMS live demo</span></h2>
+      <div id="trkBanner" class="banner" style="background:#0A7A3B;color:#fff">● Bus moving · ETA <b id="trkEta">24 min</b> · In transit</div>
+      <div style="position:relative;border-radius:12px;overflow:hidden">
+        <div id="trkMap" style="height:400px;background:#111"></div>
+        <div style="position:absolute;top:10px;left:10px;background:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:13px">🟡 LIVE · Ikeja → CMS</div>
+        <div style="position:absolute;left:10px;right:10px;bottom:10px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,.35)">
+          <div class="row"><div><b>Danfo · KTU-123XY</b><div class="mut">Musa K. · 08030000001</div></div>
+          <span class="pill g" id="trkStatus">On the way to location</span></div>
+          <div class="mut" style="margin-top:4px">Schedule: <b style="color:#121212">Today · 8:30 AM</b> · Trip: <b style="color:#121212" id="trkTrip">—</b></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <a class="btn" style="flex:1;text-align:center;text-decoration:none" href="tel:08030000001">📞 Call</a>
+            <button class="btn ghost" style="flex:1" onclick="trkShare()">📤 Share</button>
+            <button class="btn ghost" style="flex:1" onclick="document.querySelector('[data-tab=bookings]').click()">🧾 Details</button>
+          </div>
         </div>
-        <span style="position:absolute;left:6px;top:30px;font-size:12px">📍 Ikeja</span>
-        <span style="position:absolute;right:6px;top:30px;font-size:12px">Ibadan 📍</span>
       </div>
-      <div class="row">
-        <span class="mut" id="trkMeta">Ping 5s ago · 50 km/h avg</span>
+      <div class="row" style="margin-top:10px">
+        <span class="mut" id="trkMeta">Ping 5s ago · 52 km/h avg</span>
         <span>
           <button class="btn ghost" style="margin:0 6px 0 0" onclick="trkStale()">Simulate signal drop</button>
           <button class="btn ghost" style="margin:0" onclick="trkReset()">Restart demo trip</button>
@@ -131,19 +155,21 @@
     </div>
   </section>
 
-  <!-- ACCOUNT -->
+  <!-- ACCOUNT (login and signup are separate views; existing emails go to login) -->
   <section id="tab-account" class="hidden">
-    <div class="grid2">
-      <div class="card">
-        <h2>Log in</h2>
-        <p class="mut">Email, phone number or username + password.</p>
+    <div id="acctNotice"></div>
+    <div class="card" id="loginCard">
+        <h2>Welcome back</h2>
+        <p class="mut">Log in with your email, phone number or username.</p>
         <label> Email / Phone / Username</label><input id="liId" placeholder="e.g. adaeze@… · 0803… · adaeze.o">
         <label>Password</label><input id="liPw" type="password" placeholder="Your password">
         <button class="btn" onclick="demoLogin()">Log in</button>
+        <div><button class="btn ghost" onclick="showAcct('signup')">New here? Create an account</button></div>
         <div id="liMsg" class="mut" style="margin-top:6px"></div>
-      </div>
-      <div class="card">
-        <h2>Sign up</h2>
+    </div>
+    <div class="card hidden" id="signupCard">
+        <h2>Create your account</h2>
+        <p class="mut">Takes a minute — then we verify you with a code.</p>
         <div class="grid2">
           <div><label>First Name</label><input id="suFirst" placeholder="Adaeze"></div>
           <div><label>Last Name</label><input id="suLast" placeholder="Okafor"></div>
@@ -159,6 +185,7 @@
         <div><label style="display:inline;margin-right:14px"><input type="radio" name="ch" value="email" checked style="width:auto"> Email</label>
         <label style="display:inline"><input type="radio" name="ch" value="sms" style="width:auto"> SMS</label></div>
         <button class="btn" onclick="demoSignup()">Create account</button>
+        <div><button class="btn ghost" onclick="showAcct('login')">Already registered? Log in</button></div>
         <div id="suMsg" class="mut" style="margin-top:6px"></div>
         <div id="otpBox" class="hidden">
           <label>OTP Code <span class="mut" id="otpHint"></span></label>
@@ -166,7 +193,6 @@
           <button class="btn green" onclick="demoVerify()">Verify</button>
           <div class="banner warn" id="demoCode" style="margin-top:8px"></div>
         </div>
-      </div>
     </div>
     <div class="card hidden" id="whoCard"><h2>Account</h2><div id="whoIs"></div>
       <button class="btn ghost" onclick="demoLogout()">Log out</button></div>
@@ -216,13 +242,62 @@
 <div class="foot">9ja Transport web demo · seed: Ikeja ↔ CMS · fares lock at booking · QR single-use · mirrors Flutter app flows J1/J2/J3</div>
 
 <script>
-// ---------- seed (mirrors database/seed.sql) ----------
-const PARKS = { ikeja: 'Ikeja Park', cms: 'CMS Park' };
-let trips = [
-  { id:'t1', from:'ikeja', to:'cms', time:'8:30 AM',  cap:14, booked:11, arrived:9,  fare:1500, status:'boarding',   driver:'Musa K.', phone:'0803…01', plate:'KTU-123XY', rating:4.8 },
-  { id:'t2', from:'ikeja', to:'cms', time:'12:00 PM', cap:14, booked:4,  arrived:0,  fare:1500, status:'scheduled', driver:'Musa K.', phone:'0803…01', plate:'KTU-123XY', rating:4.8 },
-  { id:'t3', from:'cms',   to:'ikeja', time:'4:00 PM', cap:18, booked:16, arrived:0,  fare:1500, status:'scheduled', driver:'Tunde A.', phone:'0803…07', plate:'KTU-456AB', rating:4.6 },
+// ---------- Lagos parks + fares (LAMATA Mar 2026 list where published; ~ = danfo estimate) ----------
+// Sources: LAMATA via Channels/Punch/Tribune/Autojosh, 24–25 Feb 2026 (13% hike, effective 2 Mar 2026).
+const PARKS = { ikeja:'Ikeja Park', cms:'CMS Park', oshodi:'Oshodi Park', berger:'Berger Park',
+  obalende:'Obalende Park', lekki:'Lekki Park', ajah:'Ajah Park', yaba:'Yaba Park',
+  iyanaipaja:'Iyana Ipaja Park', egbeda:'Egbeda Park', ikotun:'Ikotun Park', mile2:'Mile 2 Park',
+  abuleegba:'Abule Egba Park', ikorodu:'Ikorodu Park' };
+const FARES = {
+ 'berger|ikeja':[470,1], 'cms|ikeja':[1500,0], 'ikeja|iyanaipaja':[440,1], 'ikeja|obalende':[720,1],
+ 'egbeda|ikeja':[680,1], 'ikeja|ikotun':[630,1], 'abuleegba|ikeja':[560,1], 'ikeja|ikorodu':[680,1],
+ 'ikeja|lekki':[1500,0], 'ajah|ikeja':[1800,0], 'ikeja|yaba':[700,0], 'ikeja|mile2':[1000,0],
+ 'ikeja|oshodi':[800,1], 'cms|oshodi':[900,0], 'berger|cms':[680,1], 'cms|obalende':[500,0],
+ 'cms|lekki':[570,1], 'ajah|cms':[920,1], 'cms|yaba':[700,0], 'cms|iyanaipaja':[1200,0],
+ 'cms|egbeda':[1100,0], 'cms|ikotun':[1100,1], 'cms|mile2':[680,1], 'abuleegba|cms':[1080,1],
+ 'cms|ikorodu':[960,1], 'berger|oshodi':[580,1], 'obalende|oshodi':[630,1], 'lekki|oshodi':[1000,0],
+ 'ajah|oshodi':[1320,1], 'oshodi|yaba':[600,0], 'iyanaipaja|oshodi':[700,0], 'egbeda|oshodi':[750,0],
+ 'ikotun|oshodi':[700,0], 'mile2|oshodi':[800,0], 'abuleegba|oshodi':[680,1], 'ikorodu|oshodi':[680,1],
+ 'berger|obalende':[680,1], 'berger|lekki':[1140,1], 'ajah|berger':[1710,1], 'berger|yaba':[630,1],
+ 'berger|iyanaipaja':[600,0], 'berger|egbeda':[800,0], 'berger|ikotun':[850,0], 'berger|mile2':[1400,0],
+ 'abuleegba|berger':[550,0], 'berger|ikorodu':[800,0], 'lekki|obalende':[600,0], 'ajah|obalende':[630,1],
+ 'obalende|yaba':[500,0], 'iyanaipaja|obalende':[1090,1], 'egbeda|obalende':[1030,1], 'ikotun|obalende':[1000,0],
+ 'mile2|obalende':[680,0], 'abuleegba|obalende':[1080,0], 'ikorodu|obalende':[970,1],
+ 'ajah|lekki':[700,0], 'lekki|yaba':[1000,0], 'iyanaipaja|lekki':[1800,0], 'egbeda|lekki':[1700,0],
+ 'ikotun|lekki':[1600,0], 'lekki|mile2':[1400,0], 'abuleegba|lekki':[1900,0], 'ikorodu|lekki':[2000,0],
+ 'ajah|yaba':[1200,0], 'ajah|iyanaipaja':[2000,0], 'ajah|egbeda':[1900,0], 'ajah|ikotun':[1400,0],
+ 'ajah|mile2':[1700,0], 'abuleegba|ajah':[2100,0], 'ajah|ikorodu':[2200,0],
+ 'iyanaipaja|yaba':[850,0], 'egbeda|yaba':[750,0], 'ikotun|yaba':[940,1], 'mile2|yaba':[800,0],
+ 'abuleegba|yaba':[900,0], 'ikorodu|yaba':[910,1], 'egbeda|iyanaipaja':[500,0], 'ikotun|iyanaipaja':[700,0],
+ 'iyanaipaja|mile2':[1100,0], 'abuleegba|iyanaipaja':[400,0], 'ikorodu|iyanaipaja':[1100,0],
+ 'egbeda|ikotun':[800,0], 'egbeda|mile2':[1000,0], 'abuleegba|egbeda':[600,0], 'egbeda|ikorodu':[1000,0],
+ 'ikotun|mile2':[1100,0], 'abuleegba|ikotun':[900,0], 'ikorodu|ikotun':[800,0],
+ 'abuleegba|mile2':[1200,0], 'ikorodu|mile2':[1500,0], 'abuleegba|ikorodu':[1100,0]
+};
+function fareOf(a, b){
+  if (a === b) return null;
+  const f = FARES[[a, b].sort().join('|')];
+  return f ? { fare: f[0], official: !!f[1] } : { fare: 1000, official: false };
+}
+const DRIVERS = [
+  { n:'Musa K.', p:'08030000001', plate:'KTU-123XY', r:4.8 },
+  { n:'Tunde A.', p:'08030000007', plate:'KTU-456AB', r:4.6 },
+  { n:'Chidi O.', p:'08030000012', plate:'KTU-789CD', r:4.7 }
 ];
+// Park details printed on the slip (PRD §7, §21). Pilot parks have real contacts.
+const PARK_META = {
+  ikeja: { loc: 'Ikeja, Lagos', tel: '08030000001', hours: '5:30am – 10pm' },
+  cms: { loc: 'CMS, Lagos Island', tel: '08030000002', hours: '5:30am – 10pm' }
+};
+function parkMeta(k){ return PARK_META[k] || { loc: 'Lagos', tel: '08030000000', hours: '5:30am – 10pm' }; }
+function todayStr(){ return new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }); }
+let trips = [];
+(function fillParks(){
+  const opts = Object.keys(PARKS).map(k => `<option value="${k}">${PARKS[k]}</option>`).join('');
+  const f = document.getElementById('from'), t = document.getElementById('to');
+  f.innerHTML = opts; t.innerHTML = opts;
+  f.value = 'ikeja'; t.value = 'cms';
+})();
 let bookings = [];   // {id,no,code,tripId,name,seats,pay(fare),payMode,payment,bs,nonce}
 let complaints = [];
 let rating = 0, myStars = 5;
@@ -234,9 +309,9 @@ document.getElementById('date').valueAsDate = new Date();
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['book','bookings','track','park','driver','support','account'].forEach(t => $('tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['book','bookings','dash','track','park','driver','support','account'].forEach(t => $('tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
   if (b.dataset.tab === 'bookings') renderMy();
-  if (b.dataset.tab === 'track') renderTrack();
+  if (b.dataset.tab === 'dash') renderDash();
   if (b.dataset.tab === 'account') renderAcct();
   if (b.dataset.tab === 'park') renderPark();
   if (b.dataset.tab === 'driver') renderDriver();
@@ -245,19 +320,31 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
 function toggleOff(){ $('offlineBar').classList.toggle('hidden', !$('simOff').checked); }
 
 // ---------- J1/J2: search → detail → book → slip ----------
+// Departures are generated per route from the fare matrix (demo mirrors searchTrips).
 function search(){
   const f = $('from').value, t = $('to').value;
   const box = $('results');
+  if (f === t) { box.innerHTML = '<p class="mut">Pick two different parks.</p>'; return; }
   if ($('simOff').checked) {
     const cached = JSON.parse(localStorage.getItem('9ja_cached_trips') || '[]');
     box.innerHTML = `<div class="banner off">📴 Offline — ${cached.length} saved trip(s)</div>` +
       (cached.map(tripCard).join('') || '<p class="mut">No saved trips. Go online and search once.</p>');
     return;
   }
-  const list = trips.filter(x => x.from === f && x.to === t && x.status !== 'departed');
-  localStorage.setItem('9ja_cached_trips', JSON.stringify(list));
-  box.innerHTML = list.length ? list.map(tripCard).join('')
-    : '<p class="mut">No trips on this route today. Try swapping parks.</p>';
+  const fo = fareOf(f, t);
+  const seed = [...(f + t)].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const times = ['8:30 AM', '12:00 PM', '4:00 PM'];
+  trips = times.map((time, i) => {
+    const d = DRIVERS[(seed + i) % DRIVERS.length];
+    const cap = 14;
+    return { id: `t-${f}-${t}-${i}`, from: f, to: t, time, cap,
+      booked: 2 + ((seed >> (i * 3)) % (cap - 4)), arrived: 0,
+      fare: fo.fare, est: !fo.official, status: i === 0 ? 'boarding' : 'scheduled',
+      driver: d.n, phone: d.p, plate: d.plate, rating: d.r };
+  });
+  localStorage.setItem('9ja_cached_trips', JSON.stringify(trips));
+  box.innerHTML = trips.map(tripCard).join('') +
+    `<p class="mut" style="margin-top:8px">Fares follow the LAMATA Mar 2026 list where published${trips[0].est ? '; ~ = danfo estimate' : ''} — your fare locks at booking.</p>`;
 }
 function tripCard(x){
   const left = x.cap - x.booked;
@@ -265,7 +352,7 @@ function tripCard(x){
     <div class="row"><div><b>${PARKS[x.from]} → ${PARKS[x.to]}</b>
     <div class="mut">${x.time} · Danfo · ${x.driver}</div>
     <span class="pill ${left < 4 ? 'a' : 'g'}">${left} spaces left</span></div>
-    <div class="fare">${naira(x.fare)}</div></div></div>`;
+    <div class="fare">${x.est ? '~' : ''}${naira(x.fare)}</div></div></div>`;
 }
 function detail(id){
   const x = trips.find(t => t.id === id);
@@ -303,6 +390,9 @@ function drawQR(elId, text){
     return false;
   }
 }
+// ---------- wallet (demo ledger mirrors database/migration_wallet.sql) ----------
+let wallet = JSON.parse(localStorage.getItem('9ja_wallet') || '{"balance":0,"txns":[]}');
+function saveWallet(){ localStorage.setItem('9ja_wallet', JSON.stringify(wallet)); }
 function book(tripId, mode){
   if (!needLogin()) return;
   const name = ($('pname').value || '').trim();
@@ -313,27 +403,154 @@ function book(tripId, mode){
   const no = '9JA-' + Math.random().toString(36).slice(2, 8).toUpperCase();
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
   const b = { id: 'b' + Date.now(), no, code, tripId, name, seats: 1, fare: x.fare,
-    payMode: mode, payment: mode === 'pay_now' ? 'paid' : 'unpaid',
-    bs: mode === 'pay_now' ? 'paid' : 'reserved', nonce: Math.random().toString(36).slice(2, 14) };
+    payMode: mode, payment: 'unpaid', bs: 'reserved', nonce: Math.random().toString(36).slice(2, 14) };
   bookings.push(b);
   localStorage.setItem('9ja_slips', JSON.stringify(bookings));
+  updateCount();
+  if (mode === 'pay_now') return payOptions(b.id); // choose Paystack / Bank Card / Wallet
+  showSlip(b);
+}
+// Pay Now → payment options (Paystack, Bank Card, 9JA Wallet).
+function payOptions(bid){
+  const b = bookings.find(x => x.id === bid);
+  const total = b.fare * b.seats;
+  const short = wallet.balance < total;
+  $('detail').innerHTML = `<div class="card">
+    <h2>Pay ${naira(total)} — booking ${b.no}</h2>
+    <label style="display:block;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-top:8px">
+      <input type="radio" name="pm" value="paystack" checked style="width:auto"> <b>Paystack</b>
+      <div class="mut">Card, bank transfer, USSD — secure checkout</div></label>
+    <label style="display:block;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-top:8px">
+      <input type="radio" name="pm" value="card" style="width:auto"> <b>Bank Card</b>
+      <div class="mut">Card only, same secure checkout</div></label>
+    <label style="display:block;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-top:8px">
+      <input type="radio" name="pm" value="wallet" style="width:auto"> <b>Wallet (9JA transport wallet)</b>
+      <div class="mut">Balance ${naira(wallet.balance)}${short ? ' — too low, fund wallet in Dashboard' : ''}</div></label>
+    <div class="mut" id="payMsg" style="margin-top:6px"></div>
+    <button class="btn" onclick="confirmPay('${bid}')">Pay ${naira(total)}</button>
+  </div>`;
+  $('detail').scrollIntoView({ behavior: 'smooth' });
+}
+function confirmPay(bid){
+  const b = bookings.find(x => x.id === bid);
+  const m = document.querySelector('input[name="pm"]:checked').value;
+  const total = b.fare * b.seats;
+  if (m === 'wallet') {
+    if (wallet.balance < total) { $('payMsg').textContent = 'Insufficient wallet balance — fund wallet in Dashboard.'; return; }
+    wallet.balance -= total;
+    wallet.txns.unshift({ kind: 'pay', amount: total, ref: 'WALLET-' + b.no, at: new Date().toLocaleString(), booking: b.no });
+    saveWallet();
+    b.payment = 'paid'; b.bs = 'paid';
+    localStorage.setItem('9ja_slips', JSON.stringify(bookings));
+    showSlip(b);
+  } else if (m === 'card') {
+    cardForm(bid); // card details → review → driver confirms → slip
+  } else {
+    wallet.txns.unshift({ kind: 'pay(paystack)', amount: total, ref: 'PSK-' + b.no, at: new Date().toLocaleString(), booking: b.no });
+    saveWallet();
+    b.payment = 'paid'; b.bs = 'paid';
+    localStorage.setItem('9ja_slips', JSON.stringify(bookings));
+    showSlip(b);
+  }
+}
+// Bank Card: valid card numbers in → confirm details → driver confirms at park → slip.
+function luhnOk(d){
+  d = String(d).replace(/\D/g, '');
+  if (d.length < 15 || d.length > 19) return false;
+  let s = 0, alt = false;
+  for (let i = d.length - 1; i >= 0; i--){ let n = +d[i]; if (alt){ n *= 2; if (n > 9) n -= 9; } s += n; alt = !alt; }
+  return s % 10 === 0;
+}
+function cardForm(bid){
+  const b = bookings.find(x => x.id === bid);
+  $('detail').innerHTML = `<div class="card">
+    <h2>Bank Card — ${naira(b.fare * b.seats)}</h2>
+    <label>Card number</label><input id="ccNum" placeholder="4084 0840 8408 4081" maxlength="19" inputmode="numeric">
+    <div class="grid2"><div><label>Expiry MM/YY</label><input id="ccExp" placeholder="09/27" maxlength="5"></div>
+    <div><label>CVV</label><input id="ccCvv" type="password" placeholder="123" maxlength="4" inputmode="numeric"></div></div>
+    <label>Name on card</label><input id="ccName" placeholder="Adaeze Okafor">
+    <div class="mut" id="ccMsg" style="margin-top:6px"></div>
+    <button class="btn" onclick="cardReview('${bid}')">Continue</button>
+  </div>`;
+}
+function cardReview(bid){
+  const b = bookings.find(x => x.id === bid);
+  const digits = $('ccNum').value.replace(/\D/g, '');
+  const exp = $('ccExp').value.trim(), cvv = $('ccCvv').value.trim(), nm = $('ccName').value.trim();
+  const mm = /^(0[1-9]|1[0-2])\/(\d{2})$/.exec(exp);
+  const okExp = mm && (2000 + +mm[2] > new Date().getFullYear() || (2000 + +mm[2] === new Date().getFullYear() && +mm[1] >= new Date().getMonth() + 1));
+  if (!luhnOk(digits)) { $('ccMsg').textContent = 'Enter a valid card number.'; return; }
+  if (!okExp) { $('ccMsg').textContent = 'Expiry must be MM/YY in the future.'; return; }
+  if (!/^\d{3,4}$/.test(cvv)) { $('ccMsg').textContent = 'Enter the 3–4 digit CVV.'; return; }
+  if (!nm) { $('ccMsg').textContent = 'Enter the name on card.'; return; }
+  const last4 = digits.slice(-4);
+  $('detail').innerHTML = `<div class="card">
+    <h2>Confirm payment — ${naira(b.fare * b.seats)}</h2>
+    <div class="qrow"><span>Booking</span><b>${b.no}</b></div>
+    <div class="qrow"><span>Route</span><b>${PARKS[trips.find(t => t.id === b.tripId).from]} → ${PARKS[trips.find(t => t.id === b.tripId).to]}</b></div>
+    <div class="qrow"><span>Amount</span><b>${naira(b.fare * b.seats)}</b></div>
+    <div class="qrow"><span>Card</span><b>•••• •••• •••• ${last4} (${nm})</b></div>
+    <div class="mut">Check the details. After Pay, the driver confirms at the park — then your slip turns paid.</div>
+    <button class="btn" onclick="cardPay('${bid}','${last4}')">Pay ${naira(b.fare * b.seats)}</button>
+    <button class="btn ghost" onclick="cardForm('${bid}')">Back — edit card</button>
+  </div>`;
+}
+function cardPay(bid, last4){
+  const b = bookings.find(x => x.id === bid);
+  b.card = { last4 }; // pending — driver confirms in Park Mode queue
+  localStorage.setItem('9ja_slips', JSON.stringify(bookings));
+  showSlip(b);
+  alert('Card recorded (•••• ' + last4 + '). Show this booking at the park — the driver taps Confirm, then your slip turns paid.');
+}
+function showSlip(b){
+  const x = trips.find(t => t.id === b.tripId);
+  const pm = parkMeta(x.from);
+  const paidTag = b.payment === 'paid' ? '(paid)' : (b.card ? `(card ••••${b.card.last4} — awaiting driver confirmation)` : '(pay cash at park)');
   $('detail').innerHTML = `<div class="slip" id="slipCard">
-    <b>🎫 Digital Transport Slip ${mode === 'pay_now' ? '(paid online)' : '(pay cash at park)'}</b>
-    <div class="mut">Passenger: <b style="color:#121212">${name}</b> · ${no}</div>
-    <div class="mut">Route: <b style="color:#121212">${PARKS[x.from]} → ${PARKS[x.to]}</b> · Today ${x.time}</div>
-    <div class="mut">Fare: <b style="color:#121212">₦${x.fare.toLocaleString()}</b> ${mode === 'pay_now' ? 'paid' : '+ ₦100 charge, pay cash at park'}</div>
-    <div class="mut">Driver: <b style="color:#121212">${x.driver}</b> · ${x.phone} · Danfo ${x.plate}</div>
-    <div class="mut">Park: <b style="color:#121212">Ikeja Park</b> · Seat: any free seat</div>
+    <b>🎫 Digital Transport Slip ${paidTag}</b>
+    <div class="mut">Passenger: <b style="color:#121212">${b.name}</b> · ${b.seats} seat(s)</div>
+    <div class="mut">Booking: <b style="color:#121212">${b.no}</b> · Booked ${todayStr()}</div>
+    <div class="mut">Route: <b style="color:#121212">${PARKS[x.from]} → ${PARKS[x.to]}</b></div>
+    <div class="mut">Date &amp; Time: <b style="color:#121212">${todayStr()} · departs ${x.time}</b></div>
+    <div class="mut">Fare: <b style="color:#121212">₦${(b.fare * b.seats).toLocaleString()}</b> ${b.payment === 'paid' ? 'paid' : '+ ₦100 charge, pay cash at park'}</div>
+    <div class="mut">Driver: <b style="color:#121212">${x.driver} ★${x.rating}</b> · ${x.phone}</div>
+    <div class="mut">Vehicle: <b style="color:#121212">Danfo · ${x.plate}</b> · verified</div>
+    <div class="mut">Park: <b style="color:#121212">${PARKS[x.from]}</b> · ${pm.loc} · ${pm.tel} · ${pm.hours}</div>
+    <div class="mut">Seat: any free seat · Show this slip at the park</div>
     <div class="qr" id="slipQR"></div>
-    <div style="text-align:center;font-weight:800;letter-spacing:2px">TRIP CODE: ${code}</div>
+    <div style="text-align:center;font-weight:800;letter-spacing:2px">TRIP CODE: ${b.code}</div>
     <div class="mut" style="text-align:center">Scan the QR with any phone camera — it encodes this booking. Saved on this browser · works offline</div>
   </div>
-  <p class="mut" style="margin-top:8px">At the park open <b>Park Mode</b> and verify code <b>${code}</b>, then board any free seat.</p>`;
+  <p class="mut" style="margin-top:8px">At the park open <b>Park Mode</b> and verify code <b>${b.code}</b>, then board any free seat.</p>`;
   drawQR('slipQR', qrPayload(b));
   $('detail').scrollIntoView({ behavior: 'smooth' });
   updateCount();
 }
 function updateCount(){ $('bkCount').textContent = bookings.length ? `(${bookings.length})` : ''; }
+
+// ---------- dashboard: profile, wallet + fund, history ----------
+function renderDash(){
+  const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
+  $('dashProfile').innerHTML = u
+    ? `<b>${u.first} ${u.last}</b> <span class="mut">@${u.username}</span>
+       <div class="mut">${u.phone} · ${u.email}</div>
+       <div class="mut">Email ${u.ev ? '✓ verified' : '✗ unverified'} · SMS ${u.pv ? '✓ verified' : '✗ unverified'}</div>`
+    : '<p class="mut">Not logged in — use the Log in tab.</p>';
+  $('dashBal').textContent = naira(wallet.balance);
+  $('dashTx').innerHTML = wallet.txns.length ? wallet.txns.map(t =>
+    `<div class="qrow"><div style="flex:1"><b>${t.kind}</b> · ${naira(t.amount)}
+     <div class="mut">${t.ref} · ${t.at}${t.booking ? ' · booking ' + t.booking : ''}</div></div></div>`
+  ).join('') : '<p class="mut">No transactions yet.</p>';
+}
+function fundWallet(){
+  const amt = Math.round(Number($('fundAmt').value) || 0);
+  if (amt < 100) { alert('Minimum top-up is ₦100'); return; }
+  const ref = 'FUND-' + Date.now().toString(36).toUpperCase();
+  wallet.balance += amt;
+  wallet.txns.unshift({ kind: 'fund', amount: amt, ref, at: new Date().toLocaleString() });
+  saveWallet();
+  renderDash();
+}
 
 // ---------- bookings + cancel ----------
 function refundPreview(b){
@@ -349,19 +566,23 @@ function renderMy(){
       <div class="mut">${b.no} · ${b.bs} · ${b.payment} · code ${b.code}</div>
       <div class="mut">${refundPreview(b)}</div></div>
       <button class="btn ghost" style="margin:0" onclick="viewSlip('${b.id}')">Slip / QR</button>
-      ${alive ? `<button class="btn red" style="margin:0" onclick="cancelB('${b.id}')">Cancel</button>` : ''}</div>`;
+      ${alive ? `<button class="btn red" style="margin:0" onclick="askDelete('${b.id}')">Delete</button>` : ''}</div>`;
   }).join('') + `<div id="slipView"></div>` : '<p class="mut">No bookings yet — search and book a trip.</p>';
 }
 // Full booking-details view: every slip field + scannable QR + trip code.
 function viewSlip(id){
   const b = bookings.find(x => x.id === id);
   const x = trips.find(t => t.id === b.tripId);
+  const pm = parkMeta(x.from);
   $('slipView').innerHTML = `<div class="slip" style="margin-top:12px">
     <b>🎫 Digital Transport Slip — ${b.no}</b>
-    <div class="mut">Passenger: <b style="color:#121212">${b.name}</b> · ${b.seats} seat(s)</div>
-    <div class="mut">Route: <b style="color:#121212">${PARKS[x.from]} → ${PARKS[x.to]}</b> · ${x.time}</div>
+    <div class="mut">Passenger: <b style="color:#121212">${b.name}</b> · ${b.seats} seat(s) · booked ${todayStr()}</div>
+    <div class="mut">Route: <b style="color:#121212">${PARKS[x.from]} → ${PARKS[x.to]}</b></div>
+    <div class="mut">Date &amp; Time: <b style="color:#121212">${todayStr()} · departs ${x.time}</b></div>
     <div class="mut">Fare: <b style="color:#121212">₦${(b.fare * b.seats).toLocaleString()}</b> · ${b.payment} (${b.payMode === 'pay_now' ? 'online' : 'cash at park'}) · status ${b.bs}</div>
-    <div class="mut">Driver: <b style="color:#121212">${x.driver}</b> · ${x.phone} · Danfo ${x.plate} · Ikeja Park</div>
+    <div class="mut">Driver: <b style="color:#121212">${x.driver} ★${x.rating}</b> · ${x.phone}</div>
+    <div class="mut">Vehicle: <b style="color:#121212">Danfo · ${x.plate}</b> · verified</div>
+    <div class="mut">Park: <b style="color:#121212">${PARKS[x.from]}</b> · ${pm.loc} · ${pm.tel} · ${pm.hours}</div>
     <div class="qr" id="qr_${b.id}"></div>
     <div style="text-align:center;font-weight:800;letter-spacing:2px">TRIP CODE: ${b.code}</div>
     <div class="mut" style="text-align:center">Point any phone camera at the QR — it decodes to this booking's payload.</div>
@@ -369,13 +590,34 @@ function viewSlip(id){
   drawQR('qr_' + b.id, qrPayload(b));
   $('slipView').scrollIntoView({ behavior: 'smooth' });
 }
-function cancelB(id){
+let delTarget = null;
+// Red Delete → "Are you sure you want to Delete?" with green YES / red NO.
+function askDelete(id){
   const b = bookings.find(x => x.id === id);
-  if (!confirm(`Cancel ${b.no}? ${refundPreview(b)}`)) return;
-  b.bs = 'cancelled';
+  delTarget = id;
+  $('delSub').textContent = `${b.no} · ${refundPreview(b)}`;
+  $('delModal').style.display = 'flex';
+  $('delYes').onclick = () => { $('delModal').style.display = 'none'; deleteB(delTarget); };
+  $('delNo').onclick = () => { $('delModal').style.display = 'none'; delTarget = null; };
+}
+function deleteB(id){
+  const b = bookings.find(x => x.id === id);
+  if (!b) return;
+  // Wallet-paid bookings refund straight back to wallet (demo mirrors payWithWallet reversal).
+  const paid = wallet.txns.find(t => t.booking === b.no && t.kind === 'pay');
+  if (b.payment === 'paid' && paid) {
+    wallet.balance += b.fare * b.seats;
+    wallet.txns.unshift({ kind: 'refund', amount: b.fare * b.seats, ref: 'REF-' + b.no, at: new Date().toLocaleString(), booking: b.no });
+    saveWallet();
+  }
   const x = trips.find(t => t.id === b.tripId);
-  x.booked = Math.max(0, x.booked - b.seats);
+  if (x && ['reserved', 'paid'].includes(b.bs)) x.booked = Math.max(0, x.booked - b.seats);
+  bookings = bookings.filter(y => y.id !== id);
+  localStorage.setItem('9ja_slips', JSON.stringify(bookings));
   renderMy();
+}
+function cancelB(id){
+  askDelete(id); // legacy entry point now routes to the Delete flow
 }
 
 // ---------- J3: park mode ----------
@@ -389,10 +631,14 @@ function renderPark(){
   const rows = bookings.filter(b => !['cancelled', 'expired'].includes(b.bs))
     .map((b, i) => {
       const done = ['arrived', 'boarded'].includes(b.bs);
+      const payLabel = b.payment === 'paid' ? 'paid' : (b.card ? `CARD ••••${b.card.last4} — tap Confirm` : 'UNPAID cash');
+      const action = b.payment === 'paid' ? '' :
+        b.card ? `<button class="btn ghost" style="margin:0;padding:5px 10px" onclick="confirmCardDemo('${b.id}')">Card ••••${b.card.last4} — Confirm</button>`
+               : `<button class="btn ghost" style="margin:0;padding:5px 10px" onclick="cashB('${b.id}')">Cash?</button>`;
       return `<div class="qrow"><b style="color:#FFC300">${String(i + 1).padStart(3, '0')}</b>
-        <div style="flex:1"><b>${b.name}</b> <span class="mut">${b.no} · ${b.payment === 'paid' ? 'paid' : 'UNPAID cash'}</span></div>
+        <div style="flex:1"><b>${b.name}</b> <span class="mut">${b.no} · ${payLabel}</span></div>
         <span class="pill ${done ? 'g' : 'a'}">${done ? 'Arrived' : 'Waiting'}</span>
-        ${b.payment !== 'paid' ? `<button class="btn ghost" style="margin:0;padding:5px 10px" onclick="cashB('${b.id}')">Cash?</button>` : ''}
+        ${action}
         <button class="btn ghost" style="margin:0;padding:5px 10px" onclick="scanSim('${b.code}')">Scan</button>
       </div>`;
     }).join('');
@@ -420,6 +666,18 @@ function scanSim(code){
 function cashB(id){
   const b = bookings.find(x => x.id === id);
   b.payment = 'paid'; if (b.bs === 'reserved') b.bs = 'paid';
+  localStorage.setItem('9ja_slips', JSON.stringify(bookings));
+  renderPark();
+}
+// Driver confirms a card payment at the park — slip turns paid only now.
+function confirmCardDemo(id){
+  const b = bookings.find(x => x.id === id);
+  if (!b.card) return;
+  if (!confirm(`Confirm card payment?\n${b.name} · ${b.no} · card ••••${b.card.last4}\nConfirm only after verifying with the passenger.`)) return;
+  b.payment = 'paid'; if (b.bs === 'reserved') b.bs = 'paid';
+  wallet.txns.unshift({ kind: 'pay(card)', amount: b.fare * b.seats, ref: 'CARD-' + b.no, at: new Date().toLocaleString(), booking: b.no });
+  saveWallet();
+  localStorage.setItem('9ja_slips', JSON.stringify(bookings));
   renderPark();
 }
 function dailyClose(){
@@ -478,10 +736,18 @@ let demoSession = JSON.parse(localStorage.getItem('9ja_session') || 'null');
 let pendingOtp = null;
 function normPh(p){ p = String(p||'').replace(/[\s-]/g,''); if (/^0[789]\d{9}$/.test(p)) p = '+234' + p.slice(1); return p; }
 function refreshAcct(){ $('acctTab').textContent = demoSession ? demoSession.username + ' ▾' : 'Log in'; }
+// Login and signup are separate views — toggled by links, never side by side.
+function showAcct(view, notice){
+  $('loginCard').classList.toggle('hidden', view !== 'login');
+  $('signupCard').classList.toggle('hidden', view !== 'signup');
+  $('acctNotice').innerHTML = notice
+    ? `<div class="banner" style="background:#E0EAFF;color:#175CD3">${notice}</div>` : '';
+}
 function renderAcct(){
   refreshAcct();
   const w = demoUsers.find(u => u.username === (demoSession && demoSession.username));
   $('whoCard').classList.toggle('hidden', !w);
+  if (!w && $('otpBox').classList.contains('hidden')) showAcct('login');
   if (w) $('whoIs').innerHTML = `<b>${w.first} ${w.last}</b> <span class="mut">@${w.username}</span>
     <div class="mut">${w.phone} · ${w.email}</div>
     <div class="mut">Email ${w.ev ? '✓ verified' : '✗ unverified'} · SMS ${w.pv ? '✓ verified' : '✗ unverified'}</div>`;
@@ -498,9 +764,14 @@ function demoSignup(){
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return msg('Enter a valid email.');
   if (pw.length < 8) return msg('Password must be 8+ characters.');
   if (pw !== pw2) return msg('Passwords do not match.');
-  if (demoUsers.some(x => x.phone === ph)) return msg('Phone number already registered.');
-  if (demoUsers.some(x => x.email === em)) return msg('Email already registered.');
-  if (demoUsers.some(x => x.username === u)) return msg('Username taken.');
+  // Old user? A registered email goes straight to login — never registers twice.
+  if (demoUsers.some(x => x.email === em)) {
+    $('liId').value = em;
+    showAcct('login', 'This email is already registered — please log in.');
+    return;
+  }
+  if (demoUsers.some(x => x.phone === ph)) return msg('Phone number already registered — try logging in.');
+  if (demoUsers.some(x => x.username === u)) return msg('Username taken — choose another.');
   demoUsers.push({ first: f, last: l, username: u, phone: ph, email: em, pw, ev: false, pv: false });
   localStorage.setItem('9ja_users', JSON.stringify(demoUsers));
   pendingOtp = { username: u, channel: ch, code: String(Math.floor(100000 + Math.random() * 900000)) };
@@ -544,34 +815,80 @@ function needLogin(){
   return false;
 }
 
-// restore slips across reloads
+// restore cached trips + slips across reloads
 try {
+  trips = JSON.parse(localStorage.getItem('9ja_cached_trips') || '[]');
   bookings = JSON.parse(localStorage.getItem('9ja_slips') || '[]');
-  bookings.forEach(b => { const x = trips.find(t => t.id === b.tripId); if (x) { x.booked++; if (['arrived','boarded'].includes(b.bs)) x.arrived++; } });
   updateCount();
 } catch (e) {}
 refreshAcct();
 
-// ---------- Phase 12 demo: animated Lagos → Ibadan trip ----------
-let trk = { pct: 5, timer: null, stale: false, eta: 135, notes: [] };
+// ---------- Phase 12 demo: LIVE MAP, danfo moves along Ikeja → CMS ----------
+const DANFO_SVG = `<svg viewBox="0 0 96 56" width="52" height="31"><path d="M6 44 L8 20 Q8.5 12 16 11 L30 9 Q38 4 50 4 L74 4 Q84 4 86 14 L90 40 Q90.5 44 86 44 Z" fill="#FFC300" stroke="#121212" stroke-width="3"/><path d="M13 21 L15 13 L29 12 L29 26 L13.5 26 Z" fill="#BFD9E8" stroke="#121212" stroke-width="2.5"/><rect x="33" y="12" width="12" height="13" fill="#BFD9E8" stroke="#121212" stroke-width="2.5"/><rect x="48" y="12" width="12" height="13" fill="#BFD9E8" stroke="#121212" stroke-width="2.5"/><rect x="63" y="12" width="12" height="13" fill="#BFD9E8" stroke="#121212" stroke-width="2.5"/><rect x="7" y="30" width="82" height="4" fill="#121212"/><rect x="4" y="43" width="88" height="3.4" fill="#121212"/><circle cx="26" cy="45" r="7" fill="#121212"/><circle cx="72" cy="45" r="7" fill="#121212"/></svg>`;
+// Approx corridor Ikeja Park → CMS Park (Lagos). Real app draws the same shape from park coords.
+const ROUTE = [[6.6018,3.3515],[6.5900,3.3580],[6.5785,3.3685],[6.5660,3.3730],[6.5520,3.3790],[6.5300,3.3840],[6.5050,3.3880],[6.4800,3.3910],[6.4620,3.3935],[6.4458,3.3958]];
+function segKm(a, b){ const R=6371,r=Math.PI/180;
+  const h=Math.sin((b[0]-a[0])*r/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin((b[1]-a[1])*r/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h)); }
+const SEGS = ROUTE.slice(1).map((p, i) => segKm(ROUTE[i], p));
+const TOTAL_KM = SEGS.reduce((a, b) => a + b, 0);
+function pointAt(km){
+  let acc = 0;
+  for (let i = 0; i < SEGS.length; i++){
+    if (km <= acc + SEGS[i] || i === SEGS.length - 1){
+      const f = SEGS[i] ? Math.min(1, Math.max(0, (km - acc) / SEGS[i])) : 0;
+      const a = ROUTE[i], b = ROUTE[i + 1];
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+    }
+    acc += SEGS[i];
+  }
+  return ROUTE[ROUTE.length - 1];
+}
+let trk = { km: 0.6, timer: null, stale: false, map: null, marker: null, done: null, notes: [] };
+function trkIcon(dim){
+  return L.divIcon({ html: `<div style="opacity:${dim ? 0.45 : 1}">${DANFO_SVG}</div>`,
+    className: '', iconSize: [52, 31], iconAnchor: [26, 15] });
+}
 function renderTrack(){
+  $('trkTrip').textContent = (bookings[bookings.length - 1] || {}).no || 'demo trip';
+  if (typeof L === 'undefined') {
+    $('trkMap').innerHTML = '<p style="color:#fff;padding:20px">Map library needs internet once — route Ikeja → CMS, danfo moving, ETA live when online.</p>';
+    return;
+  }
+  if (!trk.map) {
+    trk.map = L.map('trkMap').setView([6.53, 3.375], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      { attribution: '© OpenStreetMap © CARTO', maxZoom: 19 }).addTo(trk.map);
+    L.polyline(ROUTE, { color: '#555', weight: 5 }).addTo(trk.map); // planned route
+    trk.done = L.polyline([ROUTE[0]], { color: '#FFC300', weight: 5 }).addTo(trk.map); // travelled
+    L.marker(ROUTE[0]).addTo(trk.map).bindTooltip('📍 Ikeja Park');
+    L.marker(ROUTE[ROUTE.length - 1]).addTo(trk.map).bindTooltip('CMS Park 📍');
+    trk.marker = L.marker(ROUTE[0], { icon: trkIcon(false) }).addTo(trk.map);
+    pushTrkNote('🔔 Bus has departed Ikeja Park.');
+  }
   if (trk.timer) return;
   trk.timer = setInterval(() => {
-    if (trk.stale) return; // frozen — signal dropped
-    trk.pct = Math.min(100, trk.pct + 1.2);
-    trk.eta = Math.max(0, Math.round(135 * (100 - trk.pct) / 100));
-    $('trkBus').style.left = trk.pct + '%';
-    $('trkBar').style.width = trk.pct + '%';
-    $('trkEta').textContent = trk.eta + ' min';
-    $('trkMeta').textContent = `Ping 5s ago · 52 km/h avg · ${Math.round(trk.pct)}% of route`;
-    if (trk.pct >= 88 && !trk.notes.includes('appr')) {
+    if (trk.stale) return; // frozen — signal dropped, never animate stale
+    trk.km = Math.min(TOTAL_KM, trk.km + TOTAL_KM * 0.012);
+    const [lat, lng] = pointAt(trk.km);
+    trk.marker.setLatLng([lat, lng]);
+    trk.map.panTo([lat, lng], { animate: true });
+    trk.done.setLatLngs([ROUTE[0], [lat, lng]]);
+    const left = TOTAL_KM - trk.km;
+    const eta = Math.max(1, Math.round(left / 52 * 60));
+    $('trkEta').textContent = eta + ' min';
+    $('trkMeta').textContent = `Ping 5s ago · 52 km/h avg · ${left.toFixed(1)} km to go`;
+    $('trkStatus').textContent = 'On the way to location';
+    if (left <= 2 && !trk.notes.includes('appr')) {
       trk.notes.push('appr');
-      pushTrkNote('🔔 Approaching your stop — bus less than 5 km away.');
+      $('trkStatus').textContent = 'Approaching your stop';
+      pushTrkNote('🔔 Approaching your stop — danfo less than 5 km away.');
     }
-    if (trk.pct >= 100) {
+    if (trk.km >= TOTAL_KM) {
       clearInterval(trk.timer); trk.timer = null;
       $('trkBanner').style.background = '#0A7A3B';
-      $('trkBanner').innerHTML = '✅ Bus has arrived — tracking off. Rate your trip in Support.';
+      $('trkBanner').innerHTML = '✅ Bus has arrived CMS Park — tracking off. Rate your trip in Support.';
+      $('trkStatus').textContent = 'Arrived';
       pushTrkNote('🔔 Bus has arrived. Tracking stopped (active-trips-only rule).');
     }
   }, 900);
@@ -581,26 +898,37 @@ function pushTrkNote(t){
   d.className = 'banner warn'; d.textContent = t;
   $('trkNotes').prepend(d);
 }
+function trkShare(){
+  const t = 'I am on 9ja Transport Ikeja→CMS, danfo KTU-123XY. Track it live in the app!';
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(
+    () => alert('Copied — paste to WhatsApp/SMS'),
+    () => alert(t));
+}
 function trkStale(){
+  if (!trk.map) return;
   trk.stale = true;
+  trk.marker.setIcon(trkIcon(true));
   $('trkBanner').style.background = '#6B7280';
-  $('trkBanner').innerHTML = 'Last known location · seen 3 min ago — bus may have lost signal. Marker frozen, never animated on stale data.';
+  $('trkBanner').innerHTML = 'Last known location · seen 3 min ago — danfo may have lost signal. Marker frozen, never animated on stale data.';
   $('trkMeta').textContent = 'Ping 3 min ago · STALE — reconnecting…';
+  $('trkStatus').textContent = 'Last known location';
   pushTrkNote('📶 Signal dropped — showing last known location.');
   setTimeout(() => {
     trk.stale = false;
+    if (trk.marker) trk.marker.setIcon(trkIcon(false));
     $('trkBanner').style.background = '#0A7A3B';
-    $('trkBanner').innerHTML = `● Bus moving along Lagos–Ibadan Expressway · ETA <b id="trkEta">${trk.eta} min</b> · In transit`;
+    $('trkBanner').innerHTML = '● Bus moving · ETA <b id="trkEta">…</b> · In transit';
     pushTrkNote('📶 Signal restored — live position resumed.');
   }, 6000);
 }
 function trkReset(){
   if (trk.timer) clearInterval(trk.timer);
-  trk = { pct: 5, timer: null, stale: false, eta: 135, notes: [] };
+  if (trk.map) { trk.map.remove(); trk.map = null; trk.marker = null; trk.done = null; }
+  trk = { km: 0.6, timer: null, stale: false, map: null, marker: null, done: null, notes: [] };
   $('trkNotes').innerHTML = '';
   $('trkBanner').style.background = '#0A7A3B';
-  $('trkBanner').innerHTML = '● Bus moving along Lagos–Ibadan Expressway · ETA <b id="trkEta">135 min</b> · In transit';
-  pushTrkNote('🔔 Bus has departed Ikeja Park.');
+  $('trkBanner').innerHTML = '● Bus moving · ETA <b id="trkEta">…</b> · In transit';
+  $('trkStatus').textContent = 'On the way to location';
   renderTrack();
 }
 </script>

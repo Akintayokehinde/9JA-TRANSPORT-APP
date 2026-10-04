@@ -88,6 +88,47 @@ class FunctionsClient {
     return Map<String, dynamic>.from(r.data as Map);
   }
 
+  Future<Map<String, dynamic>> paystackInitCard({required String bookingId, String? email}) async {
+    final r = await _f.httpsCallable('paystackInit')
+        .call({'bookingId': bookingId, 'email': email, 'channel': 'card'});
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
+  Future<Map<String, dynamic>> topupInit({required int amountKobo, String? email}) async {
+    final r = await _f.httpsCallable('paystackInit')
+        .call({'purpose': 'topup', 'amountKobo': amountKobo, 'email': email});
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
+  Future<Map<String, dynamic>> myProfile() async {
+    final r = await _f.httpsCallable('myProfile').call();
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
+  Future<int> walletBalance() async {
+    final r = await _f.httpsCallable('walletBalance').call();
+    return int.parse((Map<String, dynamic>.from(r.data as Map))['balanceKobo'].toString());
+  }
+
+  Future<List> walletHistory() async {
+    final r = await _f.httpsCallable('walletHistory').call();
+    return List.from((Map<String, dynamic>.from(r.data as Map))['transactions'] ?? []);
+  }
+
+  Future<Map<String, dynamic>> payWithWallet(String bookingId) async {
+    final r = await _f.httpsCallable('payWithWallet').call({'bookingId': bookingId});
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
+  Future<Map<String, dynamic>> cardAttempt({required String bookingId, required String last4}) async {
+    final r = await _f.httpsCallable('cardAttempt').call({'bookingId': bookingId, 'last4': last4});
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
+  Future<void> confirmCardPayment(String bookingId) async {
+    await _f.httpsCallable('confirmCardPayment').call({'bookingId': bookingId});
+  }
+
   Future<void> saveFcmToken(String token) async {
     await _f.httpsCallable('saveFcmToken').call({'token': token});
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/network/functions_client.dart';
 import '../../widgets/driver_card.dart';
 import 'slip_screen.dart';
-import '../payments/payment_screen.dart';
+import '../payments/pay_options_screen.dart';
 
 /// Trip detail: fare + charge + cancel rules + driver (PRD §16, §10, §11).
 /// CTAs: Pay Now (Paystack test) or Reserve & Pay at Park.
@@ -47,9 +47,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       if (!mounted) return;
       var finalPayMode = payMode;
       if (payMode == 'pay_now') {
-        // Open Paystack checkout; on success booking flips to paid via verify.
+        // Payment options: Paystack / Bank Card / 9JA Wallet.
         final paid = await Navigator.of(context).push(MaterialPageRoute(builder: (_) =>
-          PaymentScreen(bookingId: res['bookingId'] as String)));
+          PayOptionsScreen(bookingId: res['bookingId'] as String, amountKobo: (trip!['fare_kobo'] as int))));
         if (paid != true && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Payment pending — slip saved, pay before boarding or choose cash at park')));

@@ -38,6 +38,13 @@ class AuthRepo {
     return Map<String, dynamic>.from(r.data as Map);
   }
 
+  /// Returns the account email if the identifier is registered, else throws.
+  /// Used at signup: a known email goes straight to login instead of registering.
+  Future<String> resolveEmail(String identifier) async {
+    final r = await _f.httpsCallable('loginResolve').call({'identifier': identifier.trim()});
+    return (Map<String, dynamic>.from(r.data as Map))['email'] as String;
+  }
+
   /// SMS path: verify phone via Firebase, LINK to the signed-in email user, confirm server-side.
   Future<void> verifyPhoneAndLink({
     required String phoneNumber,

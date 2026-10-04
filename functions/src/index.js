@@ -193,6 +193,16 @@ exports.markTripStatus = onCall(async (req) => {
 // Webhooks — verify signature, upsert payment, mark booking paid
 // NOTE: Paystack test→live cutover = swap PAYSTACK_SECRET_KEY sk_test→sk_live +
 // set webhook URL in dashboard to https://<region>-<project>.cloudfunctions.net/paystackWebhook.
+// Passenger dashboard: profile + wallet in one call.
+exports.myProfile = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const u = await db().query(
+    'SELECT id, phone, name, email, first_name, last_name, username, role, verified, email_verified, phone_verified, rating_avg, trips_completed FROM users WHERE id=$1',
+    [req.auth.uid]);
+  const w = await db().query('SELECT balance_kobo FROM wallets WHERE user_id=$1', [req.auth.uid]);
+  return {user: u.rows[0] || null, balanceKobo: w.rows.length ? Number(w.rows[0].balance_kobo) : 0};
+});
+
 exports.paystackWebhook = onRequest(async (req, res) => {
   const sig = req.headers["x-paystack-signature"];
   const secret = process.env.PAYSTACK_SECRET_KEY || "";
@@ -201,14 +211,18 @@ exports.paystackWebhook = onRequest(async (req, res) => {
   const ev = req.body;
   if (ev.event === "charge.success") {
     const ref = ev.data.reference;
-    const bookingId = ev.data.metadata && ev.data.metadata.bookingId;
+    const meta = ev.data.metadata || {};
     const amount = ev.data.amount;
     await db().query(
       `INSERT INTO payments (reference, booking_id, provider, amount_kobo, status, raw)
        VALUES ($1,$2,'paystack',$3,'success',$4) ON CONFLICT (reference) DO NOTHING`,
-      [ref, bookingId, amount, ev]
+      [ref, meta.bookingId || null, amount, ev]
     );
-    if (bookingId) await db().query("UPDATE bookings SET booking_status='paid', payment_status='paid' WHERE id=$1", [bookingId]);
+    if (meta.type === 'topup' && meta.userId) {
+      await creditWallet(meta.userId, amount, ref);
+    } else if (meta.bookingId) {
+      await db().query("UPDATE bookings SET booking_status='paid', payment_status='paid' WHERE id=$1", [meta.bookingId]);
+    }
   }
   res.status(200).send("ok");
 });
@@ -295,6 +309,17 @@ exports.verifyPaystack = onCall(async (req) => {
   const secret = process.env.PAYSTACK_SECRET_KEY || "";
   const r = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {headers: {Authorization: `Bearer ${secret}`}});
   if (r.data.data.status !== "success") throw new HttpsError("failed-precondition", "Payment not successful");
+  const meta = r.data.data.metadata || {};
+  if (meta.type === 'topup' && meta.userId) {
+    // Wallet top-up verify (test mode without webhook delivery).
+    await db().query(
+      `INSERT INTO payments (reference, booking_id, provider, amount_kobo, status, raw)
+       VALUES ($1,NULL,'paystack',$2,'success',$3) ON CONFLICT (reference) DO NOTHING`,
+      [reference, r.data.data.amount, r.data]
+    );
+    await creditWallet(meta.userId, r.data.data.amount, reference);
+    return {ok: true, credited: r.data.data.amount};
+  }
   await db().query(
     `INSERT INTO payments (reference, booking_id, provider, amount_kobo, status, raw)
      VALUES ($1,$2,'paystack',$3,'success',$4) ON CONFLICT (reference) DO NOTHING`,
@@ -427,22 +452,104 @@ exports.driverEarnings = onCall(async (req) => {
     perTrip: perTrip.rows, chargeRate};
 });
 
-// Phase 8: Paystack init (returns auth URL) + cash received + notifications inbox
+// Phase 8: Paystack init (booking OR wallet top-up; optional card-only channel) + cash + inbox
+// purpose 'booking' needs bookingId; 'topup' needs amountKobo. channel 'card' locks Bank Card option.
 exports.paystackInit = onCall(async (req) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
-  const {bookingId, email} = req.data;
-  const b = await db().query("SELECT * FROM bookings WHERE id=$1", [bookingId]);
-  if (!b.rows.length) throw new HttpsError("not-found", "Booking not found");
-  const bk = b.rows[0];
+  const {bookingId, email, purpose, amountKobo, channel} = req.data;
   const secret = process.env.PAYSTACK_SECRET_KEY || "";
-  const r = await axios.post("https://api.paystack.co/transaction/initialize",
-    {amount: bk.fare_kobo, email: email || "passenger@9ja.transport", metadata: {bookingId}, callback_url: "https://9ja-transport.web.app/pay/callback"},
+  let amount, meta;
+  if (purpose === 'topup') {
+    amount = Number(amountKobo);
+    if (!amount || amount < 10000) throw new HttpsError("invalid-argument", "Top up at least ₦100");
+    meta = {type: 'topup', userId: req.auth.uid};
+  } else {
+    const b = await db().query("SELECT * FROM bookings WHERE id=$1", [bookingId]);
+    if (!b.rows.length) throw new HttpsError("not-found", "Booking not found");
+    const bk = b.rows[0];
+    amount = bk.fare_kobo;
+    meta = {type: 'booking', bookingId};
+  }
+  const body = {amount, email: email || "passenger@9ja.transport", metadata: meta, callback_url: "https://9ja-transport.web.app/pay/callback"};
+  if (channel === 'card') body.channels = ['card'];
+  const r = await axios.post("https://api.paystack.co/transaction/initialize", body,
     {headers: {Authorization: `Bearer ${secret}`}});
   await db().query(
     `INSERT INTO payments (reference, booking_id, provider, amount_kobo, status, raw)
      VALUES ($1,$2,'paystack',$3,'pending',$4) ON CONFLICT (reference) DO NOTHING`,
-    [r.data.data.reference, bookingId, bk.fare_kobo, r.data]);
+    [r.data.data.reference, meta.bookingId || null, amount, r.data]);
   return {authorizationUrl: r.data.data.authorization_url, reference: r.data.data.reference};
+});
+
+// Wallet ledger: credit is idempotent per reference (webhook retries + verify retries safe).
+async function creditWallet(userId, amountKobo, reference) {
+  const client = await db().connect();
+  try {
+    await client.query("BEGIN");
+    const done = await client.query("SELECT 1 FROM wallet_transactions WHERE reference=$1", [reference]);
+    if (!done.rows.length) {
+      await client.query("INSERT INTO wallets (user_id, balance_kobo) VALUES ($1,0) ON CONFLICT (user_id) DO NOTHING", [userId]);
+      await client.query("UPDATE wallets SET balance_kobo = balance_kobo + $2, updated_at=now() WHERE user_id=$1", [userId, amountKobo]);
+      await client.query(
+        "INSERT INTO wallet_transactions (user_id, kind, amount_kobo, reference) VALUES ($1,'fund',$2,$3)",
+        [userId, amountKobo, reference]);
+    }
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+exports.walletBalance = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const {rows} = await db().query("SELECT balance_kobo FROM wallets WHERE user_id=$1", [req.auth.uid]);
+  return {balanceKobo: rows.length ? Number(rows[0].balance_kobo) : 0};
+});
+
+exports.walletHistory = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const {rows} = await db().query(
+    `SELECT w.kind, w.amount_kobo, w.reference, w.created_at, b.booking_no FROM wallet_transactions w
+     LEFT JOIN bookings b ON b.id=w.booking_id WHERE w.user_id=$1 ORDER BY w.created_at DESC LIMIT 50`,
+    [req.auth.uid]);
+  return {transactions: rows};
+});
+
+// Pay for a booking from 9JA wallet. Atomic: lock wallet row, deduct, ledger, mark paid.
+exports.payWithWallet = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const {bookingId} = req.data;
+  const client = await db().connect();
+  try {
+    await client.query("BEGIN");
+    const b = await client.query("SELECT * FROM bookings WHERE id=$1 FOR UPDATE", [bookingId]);
+    if (!b.rows.length) throw new HttpsError("not-found", "Booking not found");
+    const bk = b.rows[0];
+    if (bk.passenger_id !== req.auth.uid) throw new HttpsError("permission-denied", "Not your booking");
+    if (bk.payment_status === "paid") throw new HttpsError("failed-precondition", "Already paid");
+    await client.query("INSERT INTO wallets (user_id, balance_kobo) VALUES ($1,0) ON CONFLICT (user_id) DO NOTHING", [req.auth.uid]);
+    const w = await client.query("SELECT balance_kobo FROM wallets WHERE user_id=$1 FOR UPDATE", [req.auth.uid]);
+    if (Number(w.rows[0].balance_kobo) < bk.fare_kobo)
+      throw new HttpsError("failed-precondition", "Insufficient wallet balance — fund wallet first");
+    const ref = `WALLET-${bookingId.slice(0, 8)}-${Date.now()}`;
+    await client.query("UPDATE wallets SET balance_kobo = balance_kobo - $2, updated_at=now() WHERE user_id=$1", [req.auth.uid, bk.fare_kobo]);
+    await client.query(
+      "INSERT INTO wallet_transactions (user_id, kind, amount_kobo, reference, booking_id) VALUES ($1,'pay',$2,$3,$4)",
+      [req.auth.uid, bk.fare_kobo, ref, bookingId]);
+    await client.query("INSERT INTO payments (reference, booking_id, provider, amount_kobo, status) VALUES ($1,$2,'cash',$3,'success') ON CONFLICT DO NOTHING",
+      [ref, bookingId, bk.fare_kobo]);
+    await client.query("UPDATE bookings SET booking_status='paid', payment_status='paid' WHERE id=$1", [bookingId]);
+    await client.query("COMMIT");
+    return {ok: true, reference: ref};
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e instanceof HttpsError ? e : new HttpsError("internal", e.message);
+  } finally {
+    client.release();
+  }
 });
 
 exports.markCashReceived = onCall(async (req) => {
@@ -522,6 +629,60 @@ exports.adminSetFare = onCall(async (req) => {
   return {ok: true};
 });
 
+// Bank Card flow: passenger submits card (last4 only — full PAN never touches us;
+// charge runs through Paystack checkout), driver confirms at park, then slip is paid.
+// Step 1 (passenger): record card attempt as pending.
+exports.cardAttempt = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const {bookingId, last4} = req.data;
+  if (!/^\d{4}$/.test(String(last4 || ''))) throw new HttpsError("invalid-argument", "Card last-4 required");
+  const b = await db().query("SELECT * FROM bookings WHERE id=$1", [bookingId]);
+  if (!b.rows.length) throw new HttpsError("not-found", "Booking not found");
+  const bk = b.rows[0];
+  if (bk.passenger_id !== req.auth.uid) throw new HttpsError("permission-denied", "Not your booking");
+  if (bk.payment_status === "paid") throw new HttpsError("failed-precondition", "Already paid");
+  const ref = `CARD-${bookingId.slice(0, 8)}-${Date.now()}`;
+  await db().query(
+    `INSERT INTO payments (reference, booking_id, provider, amount_kobo, status, raw)
+     VALUES ($1,$2,'paystack',$3,'pending',$4) ON CONFLICT (reference) DO NOTHING`,
+    [ref, bookingId, bk.fare_kobo, {channel: 'card', last4}]);
+  return {ok: true, reference: ref, last4};
+});
+
+// Step 2 (driver/worker at park): confirm the card payment after seeing the passenger.
+// Slip becomes paid only after this confirmation.
+exports.confirmCardPayment = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const me = await requireRole(req.auth.uid, ["park_worker", "driver", "admin"]);
+  const {bookingId} = req.data;
+  const client = await db().connect();
+  try {
+    await client.query("BEGIN");
+    const b = await client.query("SELECT b.*, t.park_id FROM bookings b JOIN trips t ON t.id=b.trip_id WHERE b.id=$1 FOR UPDATE", [bookingId]);
+    if (!b.rows.length) throw new HttpsError("not-found", "Booking not found");
+    const bk = b.rows[0];
+    if (me.role !== "admin" && me.park_id && me.park_id !== bk.park_id) throw new HttpsError("permission-denied", "Wrong park");
+    if (bk.payment_status === "paid") throw new HttpsError("failed-precondition", "Already paid");
+    const p = await client.query(
+      "SELECT * FROM payments WHERE booking_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 1", [bookingId]);
+    if (!p.rows.length) throw new HttpsError("failed-precondition", "No card attempt to confirm");
+    await client.query("UPDATE payments SET status='success' WHERE reference=$1", [p.rows[0].reference]);
+    await client.query("UPDATE bookings SET payment_status='paid', booking_status=CASE WHEN booking_status='reserved' THEN 'paid' ELSE booking_status END WHERE id=$1", [bookingId]);
+    await client.query("COMMIT");
+    notifyUser(bk.passenger_id, {
+      sms: `9ja Transport: card payment confirmed for ${bk.booking_no}. Show slip at park.`,
+      subject: `Card confirmed ${bk.booking_no}`,
+      email: `Your card payment for booking ${bk.booking_no} was confirmed by the park.\n\n9ja Transport`,
+    });
+    return {ok: true};
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e instanceof HttpsError ? e : new HttpsError("internal", e.message);
+  } finally {
+    client.release();
+  }
+});
+
 // Phase 6: booking queue per trip (§22) — arrived first, then by creation
 exports.tripBookings = onCall(async (req) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
@@ -533,10 +694,13 @@ exports.tripBookings = onCall(async (req) => {
     throw new HttpsError("permission-denied", "Wrong park");
   const {rows} = await db().query(
     `SELECT b.id, b.passenger_name, b.seats, b.booking_no, b.booking_status, b.payment_status, b.created_at,
-            s.created_at AS arrived_at
+            s.created_at AS arrived_at, p.raw->>'last4' AS card_last4
      FROM bookings b LEFT JOIN LATERAL (
        SELECT created_at FROM scans WHERE booking_id=b.id AND result='valid' ORDER BY created_at LIMIT 1
      ) s ON true
+     LEFT JOIN LATERAL (
+       SELECT raw FROM payments WHERE booking_id=b.id AND status='pending' ORDER BY created_at DESC LIMIT 1
+     ) p ON true
      WHERE b.trip_id=$1 AND b.booking_status NOT IN ('cancelled','expired','refunded')
      ORDER BY CASE WHEN b.booking_status IN ('arrived','boarded') THEN 0 ELSE 1 END, s.arrived_at NULLS LAST, b.created_at`,
     [tripId]
