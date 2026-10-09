@@ -1,0 +1,39 @@
+name: backend-payment-test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "functions/**"
+      - "database/**"
+      - ".github/workflows/backend-test.yml"
+jobs:
+  paystack-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: nineja
+          POSTGRES_DB: nineja
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:nineja@localhost:5432/nineja
+      PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-audit --no-fund
+        working-directory: functions
+      - name: Apply schema + seed + migrations
+        run: |
+          PGPASSWORD=nineja psql -h localhost -U postgres -d nineja -f database/schema.sql
+          PGPASSWORD=nineja psql -h localhost -U postgres -d nineja -f database/seed.sql
+          for m in database/migration_*.sql; do PGPASSWORD=nineja psql -h localhost -U postgres -d nineja -f "$m"; done
+      - name: Booking + Paystack test payment
+        run: node test-payment.js
+        working-directory: functions
