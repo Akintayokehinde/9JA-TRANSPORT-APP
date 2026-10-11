@@ -91,7 +91,7 @@ class _ParkModeScreenState extends State<ParkModeScreen> {
           controller: ctl,
           onDetect: (cap) {
             if (handled) return;
-            final raw = cap.barcodes.firstOrNull?.rawValue;
+            final raw = cap.barcodes.isEmpty ? null : cap.barcodes.first.rawValue;
             if (raw == null) return;
             handled = true;
             Navigator.of(context).pop();
