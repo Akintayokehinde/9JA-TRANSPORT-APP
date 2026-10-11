@@ -1,4 +1,4 @@
-name: 9ja_transport
+name: nineja_transport
 description: 9ja Transport — Danfo/bus/bike booking (Flutter 3.x + Firebase + Postgres via Functions)
 publish_to: none
 version: 0.1.0+1
