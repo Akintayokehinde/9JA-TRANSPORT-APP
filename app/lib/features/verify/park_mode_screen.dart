@@ -76,7 +76,7 @@ class _ParkModeScreenState extends State<ParkModeScreen> {
   }
 
   void _openScanner() {
-    final ctl = MobileScannerController(torchEnabled: false);
+    final ctl = MobileScannerController();
     bool handled = false;
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => StatefulBuilder(
       builder: (ctx, setS) => Scaffold(
