@@ -518,9 +518,11 @@ Drivers should receive:
 
 The app should provide simple support options:
 
-**Call Support**  
-**Send a Message**  
+**Call Support**
+**Send a Message**
 **Report a Problem**
+**Bot Chat** — instant answers to common questions (internet, payment, refunds, tracking, wallet).
+**Live Chat** — queue to a human agent in-app (online 8am–8pm; bot covers after hours).
 
 Common complaints should have quick options such as:
 

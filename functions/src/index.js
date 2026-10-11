@@ -193,11 +193,24 @@ exports.markTripStatus = onCall(async (req) => {
 // Webhooks — verify signature, upsert payment, mark booking paid
 // NOTE: Paystack test→live cutover = swap PAYSTACK_SECRET_KEY sk_test→sk_live +
 // set webhook URL in dashboard to https://<region>-<project>.cloudfunctions.net/paystackWebhook.
+// Profile avatar: preset emoji OR gallery photo URL (client uploads to avatars/{uid} first).
+const AVATARS = ['🧑🏾','👩🏾','🧔🏾','👩🏾‍💼','🧕🏾','👨🏾‍✈️','🎓','👴🏾','🚌','⭐'];
+exports.setAvatar = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
+  const {emoji, url} = req.data || {};
+  if (emoji && !AVATARS.includes(emoji)) throw new HttpsError("invalid-argument", "Unknown avatar");
+  if (url && !/^https:\/\/firebasestorage\.googleapis\.com\//.test(url)) throw new HttpsError("invalid-argument", "Photo must be an app upload");
+  if (!emoji && !url) throw new HttpsError("invalid-argument", "Send emoji or photo URL");
+  await db().query('UPDATE users SET avatar_emoji=$2, avatar_url=$3 WHERE id=$1',
+    [req.auth.uid, emoji || null, url || null]);
+  return {ok: true};
+});
+
 // Passenger dashboard: profile + wallet in one call.
 exports.myProfile = onCall(async (req) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Login required");
   const u = await db().query(
-    'SELECT id, phone, name, email, first_name, last_name, username, role, verified, email_verified, phone_verified, rating_avg, trips_completed FROM users WHERE id=$1',
+    'SELECT id, phone, name, email, first_name, last_name, username, role, verified, email_verified, phone_verified, rating_avg, trips_completed, avatar_emoji, avatar_url FROM users WHERE id=$1',
     [req.auth.uid]);
   const w = await db().query('SELECT balance_kobo FROM wallets WHERE user_id=$1', [req.auth.uid]);
   return {user: u.rows[0] || null, balanceKobo: w.rows.length ? Number(w.rows[0].balance_kobo) : 0};

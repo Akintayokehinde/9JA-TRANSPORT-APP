@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>9ja Transport — Web App (demo)</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFC300">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -49,15 +55,55 @@
   .stars span { font-size: 26px; cursor: pointer; color: #D1D5DB; } .stars span.on { color: var(--yel); }
   .foot { text-align: center; color: var(--mut); font-size: 12px; padding: 18px; }
   .hidden { display: none; }
+  /* Auth/profile format (reference layout, 9ja identity — charcoal + danfo yellow, not pastel) */
+  .authwrap { max-width: 460px; margin: 0 auto; }
+  .authcard { background: linear-gradient(180deg, #FFFDF4, #FFF3C4); border: 1px solid #EAD98B; border-radius: 22px; padding: 26px 24px; }
+  .backbtn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #E5E7EB; background: #fff; font-size: 17px; cursor: pointer; }
+  .authtitle { text-align: center; font-size: 23px; font-weight: 800; margin-top: 10px; }
+  .authsub { text-align: center; color: var(--mut); font-size: 13.5px; margin: 4px 0 14px; }
+  .fld { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 0 12px; margin-top: 10px; }
+  .fld span.ic { font-size: 16px; }
+  .fld input { border: none !important; outline: none; margin-top: 0 !important; padding: 13px 0 !important; background: transparent; }
+  .fld input:focus { outline: none; }
+  .fld .eye { cursor: pointer; color: var(--mut); }
+  .rowbetween { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 13px; }
+  .blackbtn { display: block; width: 100%; background: #121212; color: #fff; font-weight: 800; border: none; border-radius: 999px; padding: 14px; font-size: 15.5px; cursor: pointer; margin-top: 14px; }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--mut); font-size: 12.5px; margin: 14px 0 4px; }
+  .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid #E5E7EB; }
+  .socrow { display: flex; gap: 10px; }
+  .socbtn { flex: 1; background: #fff; border: 1px solid #E5E7EB; border-radius: 999px; padding: 11px; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+  .switchlink { text-align: center; margin-top: 12px; font-size: 13.5px; }
+  .switchlink button { background: none; border: none; color: var(--info); font-weight: 800; cursor: pointer; font-size: 13.5px; }
+  .profhead { display: flex; align-items: center; gap: 16px; }
+  .avatar { width: 76px; height: 76px; border-radius: 50%; background: #121212; color: #FFC300; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 30px; flex-shrink: 0; }
+  .promo { background: var(--yel); border-radius: 14px; padding: 18px; margin-top: 18px; }
+  .pset { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #E5E7EB; border-radius: 14px; padding: 15px 16px; margin-top: 10px; cursor: pointer; font-weight: 700; font-size: 15px; }
+  .promo { background: var(--yel); border-radius: 14px; padding: 14px; margin-top: 14px; }
+  .pset { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-top: 8px; cursor: pointer; font-weight: 700; font-size: 14px; }
+  .pset .chev { margin-left: auto; color: var(--mut); }
+  .logout { color: var(--red); font-weight: 800; background: none; border: none; cursor: pointer; font-size: 14px; margin-top: 12px; }
+  /* Profile fits web: two columns on desktop, one on phones */
+  .proflayout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 34px; }
+  @media (max-width: 820px) { .proflayout { grid-template-columns: 1fr; } }
+  .confirmbar { display: flex; align-items: center; gap: 10px; background: #DCFAE6; border-radius: 12px; padding: 10px 12px; margin-top: 10px; font-weight: 700; font-size: 13.5px; }
+  .confirmbar button { margin-left: auto; }
+  /* Chat (bot FAQ + live agent) */
+  .chatlog { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+  .bubble { max-width: 85%; padding: 9px 12px; border-radius: 14px; font-size: 13.5px; }
+  .bubble.bot { background: #F3F4F6; align-self: flex-start; }
+  .bubble.me { background: #121212; color: #FFC300; align-self: flex-end; }
+  .bubble.agent { background: #E0EAFF; align-self: flex-start; }
+  .chiprow { display: flex; gap: 6px; flex-wrap: wrap; }
+  .qchip { background: #FFF8E1; border: 1px solid #EAD98B; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <header>
   <h1>🟡 9ja Transport</h1><span class="demo">WEB DEMO · in-browser, no install</span>
+  <button id="installBtn" class="hidden" style="background:#121212;color:#FFC300;font-weight:800;border:none;border-radius:8px;padding:9px 14px;cursor:pointer">⬇ Install App</button>
   <nav>
     <button data-tab="book" class="on">Book a Ride</button>
     <button data-tab="bookings">Booking History <span id="bkCount"></span></button>
-    <button data-tab="dash">Dashboard</button>
     <button data-tab="track">Live Tracking</button>
     <button data-tab="park">Park Mode</button>
     <button data-tab="driver">Driver</button>
@@ -105,23 +151,6 @@
     </div>
   </section>
 
-  <!-- DASHBOARD -->
-  <section id="tab-dash" class="hidden">
-    <div class="card"><h2>Profile</h2><div id="dashProfile"></div></div>
-    <div class="card" style="background:#FFF8E1"><h2>9JA Wallet</h2>
-      <div class="fare" id="dashBal" style="font-size:30px">₦0</div>
-      <div class="grid2">
-        <div><label>Fund amount ₦ (min 100)</label><input id="fundAmt" type="number" value="2000" min="100"></div>
-        <div style="display:flex;align-items:flex-end"><button class="btn" onclick="fundWallet()">Fund wallet</button></div>
-      </div>
-      <p class="mut">Demo top-up credits instantly (real app: Paystack checkout → verify).</p>
-    </div>
-    <div class="card"><h2>Transaction history</h2><div id="dashTx"></div></div>
-    <div class="card"><h2>Support</h2>
-      <button class="btn ghost" onclick="document.querySelector('[data-tab=support]').click()">Emergencies, complaints, ratings</button>
-    </div>
-  </section>
-
   <!-- TRACK (reference: live map fills card, danfo moves, info card overlays) -->
   <section id="tab-track" class="hidden">
     <div class="card">
@@ -152,50 +181,102 @@
     </div>
     <div class="card"><h2>How it works (PRD §44)</h2>
       <p class="mut">Book → bus departs → driver's phone pings every ~15s → every passenger on that bus reads the <b>same single position</b>, drawn as the yellow danfo. Signal drop → grey banner + frozen danfo + "last seen". Pushes: departed → approaching (&lt;5 km) → arrived. Tracking stops at completion; only booked passengers can view.</p>
+      <label>Map data key (CARTO — optional, tiles work without it; reserved for traffic/routing services)</label>
+      <div class="row"><input id="cartoKey" placeholder="Paste CARTO API key" style="flex:1">
+      <button class="btn ghost" style="margin:0;white-space:nowrap" onclick="saveCarto()">Save key</button></div>
+      <p class="mut" id="cartoMsg">Stored only in this browser — never sent anywhere except map tiles.</p>
     </div>
   </section>
 
-  <!-- ACCOUNT (login and signup are separate views; existing emails go to login) -->
+  <!-- ACCOUNT (reference format, 9ja styling: separate login / signup / profile views) -->
   <section id="tab-account" class="hidden">
+    <div class="authwrap">
     <div id="acctNotice"></div>
-    <div class="card" id="loginCard">
-        <h2>Welcome back</h2>
-        <p class="mut">Log in with your email, phone number or username.</p>
-        <label> Email / Phone / Username</label><input id="liId" placeholder="e.g. adaeze@… · 0803… · adaeze.o">
-        <label>Password</label><input id="liPw" type="password" placeholder="Your password">
-        <button class="btn" onclick="demoLogin()">Log in</button>
-        <div><button class="btn ghost" onclick="showAcct('signup')">New here? Create an account</button></div>
-        <div id="liMsg" class="mut" style="margin-top:6px"></div>
+    <div class="authcard" id="loginCard">
+        <button class="backbtn" onclick="document.querySelector('[data-tab=book]').click()">‹</button>
+        <div class="authtitle">Welcome back</div>
+        <div class="authsub">Log in to manage your trips, wallet and slips.</div>
+        <div class="fld"><span class="ic">📧</span><input id="liId" placeholder="Email · phone · username"></div>
+        <div class="fld"><span class="ic">🔒</span><input id="liPw" type="password" placeholder="Password"><span class="eye" onclick="pwToggle('liPw',this)">👁</span></div>
+        <div class="rowbetween">
+          <label><input type="checkbox" checked style="width:auto"> Remember me</label>
+          <button style="background:none;border:none;color:var(--info);font-weight:700;cursor:pointer" onclick="alert('Reset links arrive by email/SMS in the live app.')">Forgot password?</button>
+        </div>
+        <button class="blackbtn" onclick="demoLogin()">Log in</button>
+        <div class="divider">Or continue with</div>
+        <div class="socrow">
+          <button class="socbtn" onclick="otpLogin('sms')">📱 SMS code</button>
+          <button class="socbtn" onclick="otpLogin('email')">✉️ Email code</button>
+        </div>
+        <div class="switchlink">New here? <button onclick="showAcct('signup')">Create an account</button></div>
+        <div id="liOtpBox" class="hidden">
+          <div class="fld"><span class="ic">🔑</span><input id="liOtpIn" placeholder="6-digit code" maxlength="6" inputmode="numeric"></div>
+          <button class="blackbtn" onclick="verifyLoginOtp()">Verify &amp; log in</button>
+          <div class="banner warn" id="liDemoCode" style="margin-top:8px"></div>
+        </div>
+        <div id="liMsg" class="mut" style="margin-top:6px;text-align:center"></div>
     </div>
-    <div class="card hidden" id="signupCard">
-        <h2>Create your account</h2>
-        <p class="mut">Takes a minute — then we verify you with a code.</p>
+    <div class="authcard hidden" id="signupCard">
+        <button class="backbtn" onclick="document.querySelector('[data-tab=book]').click()">‹</button>
+        <div class="authtitle">Create an account</div>
+        <div class="authsub">One account for trips, wallet and live tracking.</div>
         <div class="grid2">
-          <div><label>First Name</label><input id="suFirst" placeholder="Adaeze"></div>
-          <div><label>Last Name</label><input id="suLast" placeholder="Okafor"></div>
+          <div class="fld"><span class="ic">👤</span><input id="suFirst" placeholder="First name"></div>
+          <div class="fld"><span class="ic">👤</span><input id="suLast" placeholder="Last name"></div>
         </div>
-        <label>Username</label><input id="suUser" placeholder="adaeze.o">
-        <label>Phone No</label><input id="suPhone" placeholder="0803…">
-        <label>Email Address</label><input id="suEmail" placeholder="you@example.com">
-        <div class="grid2">
-          <div><label>Password (8+)</label><input id="suPw" type="password"></div>
-          <div><label>Confirm Password</label><input id="suPw2" type="password"></div>
-        </div>
-        <label>Send OTP code to</label>
-        <div><label style="display:inline;margin-right:14px"><input type="radio" name="ch" value="email" checked style="width:auto"> Email</label>
-        <label style="display:inline"><input type="radio" name="ch" value="sms" style="width:auto"> SMS</label></div>
-        <button class="btn" onclick="demoSignup()">Create account</button>
-        <div><button class="btn ghost" onclick="showAcct('login')">Already registered? Log in</button></div>
-        <div id="suMsg" class="mut" style="margin-top:6px"></div>
+        <div class="fld"><span class="ic">🪪</span><input id="suUser" placeholder="Username"></div>
+        <div class="fld"><span class="ic">📞</span><input id="suPhone" placeholder="Phone no e.g. 0803…"></div>
+        <div class="fld"><span class="ic">📧</span><input id="suEmail" placeholder="Email address"></div>
+        <div class="fld"><span class="ic">🔒</span><input id="suPw" type="password" placeholder="Password (8+)"><span class="eye" onclick="pwToggle('suPw',this)">👁</span></div>
+        <div class="fld"><span class="ic">🔒</span><input id="suPw2" type="password" placeholder="Confirm password"></div>
+        <div class="rowbetween"><b>Send OTP code to:</b>
+          <span><label style="margin-right:10px"><input type="radio" name="ch" value="email" checked style="width:auto"> Email</label>
+          <label><input type="radio" name="ch" value="sms" style="width:auto"> SMS</label></span></div>
+        <button class="blackbtn" onclick="demoSignup()">Sign up</button>
+        <div class="switchlink">Already have an account? <button onclick="showAcct('login')">Log in</button></div>
+        <div id="suMsg" class="mut" style="margin-top:6px;text-align:center"></div>
         <div id="otpBox" class="hidden">
-          <label>OTP Code <span class="mut" id="otpHint"></span></label>
-          <input id="otpIn" placeholder="6-digit code" maxlength="6" inputmode="numeric">
-          <button class="btn green" onclick="demoVerify()">Verify</button>
+          <div class="fld"><span class="ic">🔑</span><input id="otpIn" placeholder="6-digit code" maxlength="6" inputmode="numeric"></div>
+          <button class="blackbtn" onclick="demoVerify()">Verify</button>
           <div class="banner warn" id="demoCode" style="margin-top:8px"></div>
         </div>
     </div>
-    <div class="card hidden" id="whoCard"><h2>Account</h2><div id="whoIs"></div>
-      <button class="btn ghost" onclick="demoLogout()">Log out</button></div>
+    </div><!-- /authwrap: profile lives full-width below, never squeezed -->
+    <div class="authcard hidden" id="whoCard" style="max-width:1000px;margin:0 auto;padding:34px">
+      <div class="proflayout">
+        <div>
+        <div class="profhead">
+          <div class="avatar" id="profAvatar" style="cursor:pointer;position:relative" onclick="toggleAvatarPick()" title="Change profile photo">?</div>
+          <div><div class="mut">Profile</div><div style="font-size:20px;font-weight:800" id="profHello">Welcome!</div>
+          <div class="mut" style="font-size:12px" id="avatarHint">Tap the icon to choose a photo</div></div>
+        </div>
+        <div id="whoIs" style="margin-top:6px"></div>
+        <div id="avatarPick" class="hidden" style="margin-top:10px">
+          <div class="mut">Suggested avatars:</div>
+          <div id="avatarGrid" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0"></div>
+          <div class="row"><input type="file" id="avatarFile" accept="image/*" style="flex:1">
+          <button class="btn ghost" style="margin:0 0 0 8px;white-space:nowrap" onclick="uploadAvatar()">Upload</button></div>
+          <div id="avatarConfirm" class="confirmbar hidden">✓ Looks good?
+            <button class="btn green" style="margin:0" onclick="confirmAvatar()">Use this photo</button></div>
+        </div>
+        <div class="promo">
+          <b>🎁 Promo code?</b><div class="mut">Try DANFO100 for ₦100 wallet credit.</div>
+          <div class="row"><input id="promoIn" placeholder="Enter code" style="flex:1;background:#fff">
+          <button class="btn" style="background:#121212;color:#FFC300;margin:6px 0 0 8px" onclick="applyPromo()">Use Now</button></div>
+          <div class="mut" id="promoMsg"></div>
+        </div>
+        </div>
+        <div>
+        <div style="font-weight:800">Settings</div>
+        <div class="pset" onclick="document.querySelector('[data-tab=bookings]').click()">🎫 Booking History <span class="chev">›</span></div>
+        <div class="pset" onclick="alert('Wallet balance: ' + naira(wallet.balance) + '. Top up inside payment options when booking.')">👛 9JA Wallet · <span id="profBal">₦0</span> <span class="chev">›</span></div>
+        <div class="pset" onclick="document.querySelector('[data-tab=track]').click()">🛰 Live Tracking <span class="chev">›</span></div>
+        <div class="pset" onclick="document.querySelector('[data-tab=support]').click()">🛟 Help &amp; Support <span class="chev">›</span></div>
+        <div class="pset" onclick="alert('9ja Transport — pilot in Ikeja & CMS, Lagos. Fares lock at booking.')">ℹ️ About <span class="chev">›</span></div>
+        <button class="logout" onclick="demoLogout()">⏻ Log Out</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- PARK -->
@@ -229,6 +310,20 @@
       <div class="card"><h2>Share trip</h2><p class="mut" id="shareTxt">I am on 9ja Transport Ikeja→CMS, driver Musa K. KTU-123XY.</p>
         <button class="btn ghost" onclick="copyShare()">Copy to share</button></div>
     </div>
+    <div class="grid2">
+      <div class="card"><h2>🤖 Bot Chat — instant FAQ answers</h2>
+        <div class="chatlog" id="botLog"><div class="bubble bot">Hello! I'm DanfoBot 🚌 Ask me anything, or tap a question:</div></div>
+        <div class="chiprow" id="botChips"></div>
+        <div class="row"><input id="botIn" placeholder="Type your question…" style="flex:1">
+        <button class="btn" style="margin:0 0 0 8px" onclick="botAsk()">Send</button></div>
+      </div>
+      <div class="card"><h2>💬 Live Chat — talk to support</h2>
+        <div class="chatlog" id="liveLog"><div class="bubble agent">Support is online 8am–8pm. Say hello and an agent joins you here.</div></div>
+        <div class="row"><input id="liveIn" placeholder="Type a message…" style="flex:1">
+        <button class="btn" style="margin:0 0 0 8px" onclick="liveSend()">Send</button></div>
+        <p class="mut" id="liveStatus">Demo: simulated agent queue (production: real-time agent chat).</p>
+      </div>
+    </div>
     <div class="card"><h2>Report a problem</h2>
       <div id="cats"></div>
       <div id="compl"></div>
@@ -240,6 +335,12 @@
   </section>
 </main>
 <div class="foot">9ja Transport web demo · seed: Ikeja ↔ CMS · fares lock at booking · QR single-use · mirrors Flutter app flows J1/J2/J3</div>
+<div id="pwaBar" class="hidden" style="position:fixed;left:12px;right:12px;bottom:12px;background:#121212;color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.4)">
+  <img src="/icons/icon-192.png" alt="" style="width:42px;height:42px;border-radius:10px">
+  <div style="flex:1"><b>Install 9ja Transport</b><div class="mut" id="pwaSub">Works offline · slips always with you</div></div>
+  <button id="pwaGo" style="background:#FFC300;color:#121212;font-weight:800;border:none;border-radius:8px;padding:10px 16px;cursor:pointer">Install</button>
+  <button onclick="document.getElementById('pwaBar').classList.add('hidden')" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">✕</button>
+</div>
 
 <script>
 // ---------- Lagos parks + fares (LAMATA Mar 2026 list where published; ~ = danfo estimate) ----------
@@ -309,9 +410,8 @@ document.getElementById('date').valueAsDate = new Date();
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['book','bookings','dash','track','park','driver','support','account'].forEach(t => $('tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['book','bookings','track','park','driver','support','account'].forEach(t => $('tab-'+t).classList.toggle('hidden', t !== b.dataset.tab));
   if (b.dataset.tab === 'bookings') renderMy();
-  if (b.dataset.tab === 'dash') renderDash();
   if (b.dataset.tab === 'account') renderAcct();
   if (b.dataset.tab === 'park') renderPark();
   if (b.dataset.tab === 'driver') renderDriver();
@@ -392,7 +492,9 @@ function drawQR(elId, text){
 }
 // ---------- wallet (demo ledger mirrors database/migration_wallet.sql) ----------
 let wallet = JSON.parse(localStorage.getItem('9ja_wallet') || '{"balance":0,"txns":[]}');
-function saveWallet(){ localStorage.setItem('9ja_wallet', JSON.stringify(wallet)); }
+function saveWallet(){ localStorage.setItem('9ja_wallet', JSON.stringify(wallet)); refreshChip(); }
+// Header chip removed with the Dashboard; guard keeps wallet writes safe everywhere.
+function refreshChip(){ const c = $('walChip'); if (c) c.textContent = naira(wallet.balance); }
 function book(tripId, mode){
   if (!needLogin()) return;
   const name = ($('pname').value || '').trim();
@@ -403,7 +505,9 @@ function book(tripId, mode){
   const no = '9JA-' + Math.random().toString(36).slice(2, 8).toUpperCase();
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
   const b = { id: 'b' + Date.now(), no, code, tripId, name, seats: 1, fare: x.fare,
-    payMode: mode, payment: 'unpaid', bs: 'reserved', nonce: Math.random().toString(36).slice(2, 14) };
+    payMode: mode, payment: 'unpaid', bs: 'reserved', nonce: Math.random().toString(36).slice(2, 14),
+    // snapshot: history renders even if the cached trip list is gone (old bookings safe)
+    from: x.from, to: x.to, time: x.time, driver: x.driver, phone: x.phone, plate: x.plate, rating: x.rating };
   bookings.push(b);
   localStorage.setItem('9ja_slips', JSON.stringify(bookings));
   updateCount();
@@ -415,6 +519,7 @@ function payOptions(bid){
   const b = bookings.find(x => x.id === bid);
   const total = b.fare * b.seats;
   const short = wallet.balance < total;
+  fundWallet._bid = bid; // so funding re-renders these options with the new balance
   $('detail').innerHTML = `<div class="card">
     <h2>Pay ${naira(total)} — booking ${b.no}</h2>
     <label style="display:block;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-top:8px">
@@ -425,9 +530,14 @@ function payOptions(bid){
       <div class="mut">Card only, same secure checkout</div></label>
     <label style="display:block;border:1px solid #E5E7EB;border-radius:8px;padding:10px;margin-top:8px">
       <input type="radio" name="pm" value="wallet" style="width:auto"> <b>Wallet (9JA transport wallet)</b>
-      <div class="mut">Balance ${naira(wallet.balance)}${short ? ' — too low, fund wallet in Dashboard' : ''}</div></label>
+      <div class="mut">Balance ${naira(wallet.balance)}${short ? ' — too low, top up below' : ''}</div></label>
     <div class="mut" id="payMsg" style="margin-top:6px"></div>
     <button class="btn" onclick="confirmPay('${bid}')">Pay ${naira(total)}</button>
+    ${short ? `<div class="card" style="margin-top:10px;background:#FFF8E1">
+      <b>Top up wallet</b><div class="mut">Demo top-up credits instantly (real app: Paystack checkout → verify).</div>
+      <div class="row"><input id="fundAmt" type="number" value="2000" min="100" style="flex:1">
+      <button class="btn" style="margin:0 0 0 8px" onclick="fundWallet()">Fund</button></div>
+    </div>` : ''}
   </div>`;
   $('detail').scrollIntoView({ behavior: 'smooth' });
 }
@@ -436,7 +546,7 @@ function confirmPay(bid){
   const m = document.querySelector('input[name="pm"]:checked').value;
   const total = b.fare * b.seats;
   if (m === 'wallet') {
-    if (wallet.balance < total) { $('payMsg').textContent = 'Insufficient wallet balance — fund wallet in Dashboard.'; return; }
+    if (wallet.balance < total) { $('payMsg').textContent = 'Insufficient wallet balance — top up below.'; return; }
     wallet.balance -= total;
     wallet.txns.unshift({ kind: 'pay', amount: total, ref: 'WALLET-' + b.no, at: new Date().toLocaleString(), booking: b.no });
     saveWallet();
@@ -471,6 +581,7 @@ function cardForm(bid){
     <label>Name on card</label><input id="ccName" placeholder="Adaeze Okafor">
     <div class="mut" id="ccMsg" style="margin-top:6px"></div>
     <button class="btn" onclick="cardReview('${bid}')">Continue</button>
+    <button class="btn green" onclick="payOptions('${bid}')">Back</button>
   </div>`;
 }
 function cardReview(bid){
@@ -487,12 +598,12 @@ function cardReview(bid){
   $('detail').innerHTML = `<div class="card">
     <h2>Confirm payment — ${naira(b.fare * b.seats)}</h2>
     <div class="qrow"><span>Booking</span><b>${b.no}</b></div>
-    <div class="qrow"><span>Route</span><b>${PARKS[trips.find(t => t.id === b.tripId).from]} → ${PARKS[trips.find(t => t.id === b.tripId).to]}</b></div>
+    <div class="qrow"><span>Route</span><b>${PARKS[tripOf(b).from]} → ${PARKS[tripOf(b).to]}</b></div>
     <div class="qrow"><span>Amount</span><b>${naira(b.fare * b.seats)}</b></div>
     <div class="qrow"><span>Card</span><b>•••• •••• •••• ${last4} (${nm})</b></div>
     <div class="mut">Check the details. After Pay, the driver confirms at the park — then your slip turns paid.</div>
     <button class="btn" onclick="cardPay('${bid}','${last4}')">Pay ${naira(b.fare * b.seats)}</button>
-    <button class="btn ghost" onclick="cardForm('${bid}')">Back — edit card</button>
+    <button class="btn green" onclick="cardForm('${bid}')">Back</button>
   </div>`;
 }
 function cardPay(bid, last4){
@@ -502,8 +613,16 @@ function cardPay(bid, last4){
   showSlip(b);
   alert('Card recorded (•••• ' + last4 + '). Show this booking at the park — the driver taps Confirm, then your slip turns paid.');
 }
+// Trip for a booking: live cache first, snapshot fallback (never crashes history).
+function tripOf(b){
+  const live = trips.find(t => t.id === b.tripId);
+  if (live) return live;
+  return { id: b.tripId, from: b.from || 'ikeja', to: b.to || 'cms', time: b.time || '—',
+    cap: 14, booked: 0, arrived: 0, fare: b.fare, est: false, status: 'scheduled',
+    driver: b.driver || '—', phone: b.phone || '', plate: b.plate || '—', rating: b.rating || 0 };
+}
 function showSlip(b){
-  const x = trips.find(t => t.id === b.tripId);
+  const x = tripOf(b);
   const pm = parkMeta(x.from);
   const paidTag = b.payment === 'paid' ? '(paid)' : (b.card ? `(card ••••${b.card.last4} — awaiting driver confirmation)` : '(pay cash at park)');
   $('detail').innerHTML = `<div class="slip" id="slipCard">
@@ -528,51 +647,49 @@ function showSlip(b){
 }
 function updateCount(){ $('bkCount').textContent = bookings.length ? `(${bookings.length})` : ''; }
 
-// ---------- dashboard: profile, wallet + fund, history ----------
-function renderDash(){
-  const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
-  $('dashProfile').innerHTML = u
-    ? `<b>${u.first} ${u.last}</b> <span class="mut">@${u.username}</span>
-       <div class="mut">${u.phone} · ${u.email}</div>
-       <div class="mut">Email ${u.ev ? '✓ verified' : '✗ unverified'} · SMS ${u.pv ? '✓ verified' : '✗ unverified'}</div>`
-    : '<p class="mut">Not logged in — use the Log in tab.</p>';
-  $('dashBal').textContent = naira(wallet.balance);
-  $('dashTx').innerHTML = wallet.txns.length ? wallet.txns.map(t =>
-    `<div class="qrow"><div style="flex:1"><b>${t.kind}</b> · ${naira(t.amount)}
-     <div class="mut">${t.ref} · ${t.at}${t.booking ? ' · booking ' + t.booking : ''}</div></div></div>`
-  ).join('') : '<p class="mut">No transactions yet.</p>';
-}
+// ---------- wallet top-up (fund control lives in payment options when balance is short) ----------
 function fundWallet(){
-  const amt = Math.round(Number($('fundAmt').value) || 0);
+  const amt = Math.round(Number(($('fundAmt') || {}).value) || 0);
   if (amt < 100) { alert('Minimum top-up is ₦100'); return; }
   const ref = 'FUND-' + Date.now().toString(36).toUpperCase();
   wallet.balance += amt;
   wallet.txns.unshift({ kind: 'fund', amount: amt, ref, at: new Date().toLocaleString() });
   saveWallet();
-  renderDash();
+  payOptions(fundWallet._bid); // re-render options with the new balance
 }
 
 // ---------- bookings + cancel ----------
 function refundPreview(b){
-  const x = trips.find(t => t.id === b.tripId);
+  const x = tripOf(b);
   return `${x.time} departure — ` + (b.payment === 'unpaid' ? 'no charge yet, free to cancel' : '>6h full · 1–6h 50% · <1h none');
 }
 function renderMy(){
   updateCount();
-  $('myb').innerHTML = bookings.length ? bookings.map(b => {
-    const x = trips.find(t => t.id === b.tripId);
-    const alive = ['reserved', 'paid'].includes(b.bs);
-    return `<div class="qrow"><div style="flex:1"><b>${PARKS[x.from]} → ${PARKS[x.to]}</b>
-      <div class="mut">${b.no} · ${b.bs} · ${b.payment} · code ${b.code}</div>
-      <div class="mut">${refundPreview(b)}</div></div>
-      <button class="btn ghost" style="margin:0" onclick="viewSlip('${b.id}')">Slip / QR</button>
-      ${alive ? `<button class="btn red" style="margin:0" onclick="askDelete('${b.id}')">Delete</button>` : ''}</div>`;
-  }).join('') + `<div id="slipView"></div>` : '<p class="mut">No bookings yet — search and book a trip.</p>';
+  if (!bookings.length) {
+    $('myb').innerHTML = '<p class="mut">No bookings yet — search and book a trip.</p>';
+    return;
+  }
+  // Per-row guard: one bad record can never blank the whole history again.
+  $('myb').innerHTML = bookings.map(b => {
+    try {
+      const x = tripOf(b);
+      const alive = ['reserved', 'paid'].includes(b.bs);
+      return `<div class="qrow"><div style="flex:1"><b>${PARKS[x.from]} → ${PARKS[x.to]}</b>
+        <div class="mut">${b.no} · ${b.bs} · ${b.payment} · code ${b.code}</div>
+        <div class="mut">${refundPreview(b)}</div></div>
+        <button class="btn ghost" style="margin:0" onclick="viewSlip('${b.id}')">Slip / QR</button>
+        ${alive ? `<button class="btn red" style="margin:0" onclick="askDelete('${b.id}')">Delete</button>` : ''}</div>`;
+    } catch (e) {
+      return `<div class="qrow"><div style="flex:1"><b>Booking ${b.no || ''}</b>
+        <div class="mut">This record is damaged and cannot display. Delete it below.</div></div>
+        <button class="btn red" style="margin:0" onclick="deleteB('${b.id}')">Delete</button></div>`;
+    }
+  }).join('') + `<div id="slipView"></div>`;
 }
 // Full booking-details view: every slip field + scannable QR + trip code.
 function viewSlip(id){
   const b = bookings.find(x => x.id === id);
-  const x = trips.find(t => t.id === b.tripId);
+  const x = tripOf(b);
   const pm = parkMeta(x.from);
   $('slipView').innerHTML = `<div class="slip" style="margin-top:12px">
     <b>🎫 Digital Transport Slip — ${b.no}</b>
@@ -610,7 +727,7 @@ function deleteB(id){
     wallet.txns.unshift({ kind: 'refund', amount: b.fare * b.seats, ref: 'REF-' + b.no, at: new Date().toLocaleString(), booking: b.no });
     saveWallet();
   }
-  const x = trips.find(t => t.id === b.tripId);
+  const x = tripOf(b);
   if (x && ['reserved', 'paid'].includes(b.bs)) x.booked = Math.max(0, x.booked - b.seats);
   bookings = bookings.filter(y => y.id !== id);
   localStorage.setItem('9ja_slips', JSON.stringify(bookings));
@@ -658,7 +775,7 @@ function scanSim(code){
   if (['cancelled'].includes(b.bs)) return resultBox('cancelled', `${b.no} · refund pending · do not board`);
   if (['arrived', 'boarded'].includes(b.bs)) return resultBox('used', `${b.no} already scanned · do not allow again`);
   b.bs = 'arrived';
-  const x = trips.find(t => t.id === b.tripId);
+  const x = tripOf(b);
   x.arrived++;
   resultBox('valid', `${b.name} · ${b.no} · mark arrived → direct to bus`);
   renderPark();
@@ -712,6 +829,68 @@ function advTrip(id){
 
 // ---------- support ----------
 const CATS = ['Driver did not show up', 'Vehicle was different', 'Wrong fare', 'Booking not recognised', 'Payment problem', 'Safety concern'];
+// DanfoBot knowledge (mirrors landing FAQ + cancellation/refund rules).
+const FAQS = [
+  { k: ['internet', 'offline', 'network', 'data'], q: 'Do I need internet at the park?',
+    a: 'No. Your slip is saved on your phone and opens offline. The worker’s scanner confirms it.' },
+  { k: ['pay online', 'must i pay', 'cash', 'pay cash', 'reserve'], q: 'Must I pay online?',
+    a: 'No. Reserve your space and pay cash when you arrive. Online payment is optional.' },
+  { k: ['miss', 'late', 'no-show', 'grace'], q: 'What if I miss the bus?',
+    a: 'There is a 15-minute grace period after departure. After that your space may be given to someone else.' },
+  { k: ['driver', 'verify', 'safe', 'know my'], q: 'How do I know my driver?',
+    a: 'You see the driver’s photo, name, phone, vehicle and plate number before you board — only verified drivers operate.' },
+  { k: ['fare change', 'price', 'increase'], q: 'What if the fare changes after I book?',
+    a: 'It can’t. Your fare is locked at the moment you book.' },
+  { k: ['refund', 'cancel', 'money back'], q: 'How do refunds work?',
+    a: 'Cancel >6h before: full refund (minus small charge). 1–6h: half. Under 1h: no refund.' },
+  { k: ['track', 'live', 'where is', 'bus'], q: 'Can I track my bus?',
+    a: 'Yes! Once the bus departs, open Live Tracking to see the danfo move with live ETA.' },
+  { k: ['wallet', 'fund', 'top up', 'balance'], q: 'How does the wallet work?',
+    a: 'Top up from the payment options when booking. Wallet payments are instant, and cancels refund straight back.' },
+];
+function botSay(who, text){
+  const d = document.createElement('div');
+  d.className = 'bubble ' + who;
+  d.textContent = text;
+  $('botLog').appendChild(d);
+  $('botLog').scrollTop = $('botLog').scrollHeight;
+}
+function botAnswer(text){
+  const t = text.toLowerCase();
+  const hit = FAQS.find(f => f.k.some(k => t.includes(k)));
+  return hit ? hit.a : 'I don’t have that answer yet — tap Live Chat below and an agent will help, or try words like refund, fare, tracking, wallet.';
+}
+function botAsk(preset){
+  const input = typeof preset === 'string' ? preset : $('botIn').value.trim();
+  if (!input) return;
+  botSay('me', input);
+  $('botIn').value = '';
+  setTimeout(() => botSay('bot', botAnswer(input)), 400);
+}
+function liveSay(who, text){
+  const d = document.createElement('div');
+  d.className = 'bubble ' + who;
+  d.textContent = text;
+  $('liveLog').appendChild(d);
+  $('liveLog').scrollTop = $('liveLog').scrollHeight;
+}
+let liveJoined = false;
+function liveSend(){
+  const v = $('liveIn').value.trim();
+  if (!v) return;
+  liveSay('me', v);
+  $('liveIn').value = '';
+  $('liveStatus').textContent = 'You are #2 in queue — an agent is joining…';
+  if (!liveJoined) {
+    liveJoined = true;
+    setTimeout(() => {
+      liveSay('agent', 'Hello, this is Adaeze from 9ja Support 👋 I can see your message. How can I help — booking, payment, or trip?');
+      $('liveStatus').textContent = 'Adaeze (support) is with you now. Avg reply ~2 min.';
+    }, 2500);
+  } else {
+    setTimeout(() => liveSay('agent', 'Noted — I’ve logged that on your account. Anything else I can do?'), 2000);
+  }
+}
 function renderSupport(){
   $('cats').innerHTML = CATS.map(c => `<button class="btn ghost" style="margin:4px 6px 0 0" onclick="complain('${c}')">${c}</button>`).join('');
   $('compl').innerHTML = complaints.length
@@ -719,6 +898,7 @@ function renderSupport(){
     : '';
   $('stars').innerHTML = [1, 2, 3, 4, 5].map(i =>
     `<span class="${i <= myStars ? 'on' : ''}" onclick="setStars(${i})">★</span>`).join('');
+  $('botChips').innerHTML = FAQS.map((f, i) => `<button class="qchip" onclick="botAsk('${f.q.replace(/'/g, "\\'")}')">${f.q}</button>`).join('');
 }
 function setStars(i){ myStars = i; renderSupport(); }
 function complain(c){ complaints.push(c + ' — ' + new Date().toLocaleTimeString()); renderSupport(); }
@@ -736,21 +916,129 @@ let demoSession = JSON.parse(localStorage.getItem('9ja_session') || 'null');
 let pendingOtp = null;
 function normPh(p){ p = String(p||'').replace(/[\s-]/g,''); if (/^0[789]\d{9}$/.test(p)) p = '+234' + p.slice(1); return p; }
 function refreshAcct(){ $('acctTab').textContent = demoSession ? demoSession.username + ' ▾' : 'Log in'; }
-// Login and signup are separate views — toggled by links, never side by side.
+// Views: login / signup while logged OUT; profile only after login/signup.
 function showAcct(view, notice){
-  $('loginCard').classList.toggle('hidden', view !== 'login');
-  $('signupCard').classList.toggle('hidden', view !== 'signup');
+  const logged = !!demoSession;
+  $('loginCard').classList.toggle('hidden', logged || view !== 'login');
+  $('signupCard').classList.toggle('hidden', logged || view !== 'signup');
+  $('whoCard').classList.toggle('hidden', !logged);
   $('acctNotice').innerHTML = notice
     ? `<div class="banner" style="background:#E0EAFF;color:#175CD3">${notice}</div>` : '';
 }
+function pwToggle(id, el){
+  const i = $(id);
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+// Passwordless login: code to the account's email/phone, then verify to enter.
+let pendingLoginOtp = null;
+function otpLogin(channel){
+  const idn = $('liId').value.trim();
+  const u = demoUsers.find(x => x.email === idn.toLowerCase() || x.phone === normPh(idn) || x.username === idn);
+  if (!u) { $('liMsg').textContent = 'No account found — check details or sign up.'; return; }
+  pendingLoginOtp = { username: u.username, channel,
+    code: String(Math.floor(100000 + Math.random() * 900000)) };
+  $('liOtpBox').classList.remove('hidden');
+  $('liOtpHint').textContent = channel === 'email' ? `(sent to ${u.email})` : `(sent via SMS to ${u.phone})`;
+  $('liDemoCode').textContent = `Demo code (real app sends this by ${channel === 'email' ? 'email' : 'SMS'}): ${pendingLoginOtp.code}`;
+}
+function verifyLoginOtp(){
+  if (!pendingLoginOtp) return;
+  if ($('liOtpIn').value.trim() !== pendingLoginOtp.code) { $('liMsg').textContent = 'Wrong code — check and try again.'; return; }
+  demoSession = { username: pendingLoginOtp.username };
+  localStorage.setItem('9ja_session', JSON.stringify(demoSession));
+  pendingLoginOtp = null;
+  $('liOtpBox').classList.add('hidden');
+  renderAcct();
+}
+// Promo: DANFO100 → ₦100 wallet credit, once per browser.
+function applyPromo(){
+  const c = $('promoIn').value.trim().toUpperCase();
+  const used = JSON.parse(localStorage.getItem('9ja_promos') || '[]');
+  if (c === 'DANFO100' && !used.includes(c)) {
+    wallet.balance += 100;
+    wallet.txns.unshift({ kind: 'fund', amount: 100, ref: 'PROMO-DANFO100', at: new Date().toLocaleString() });
+    saveWallet();
+    used.push(c);
+    localStorage.setItem('9ja_promos', JSON.stringify(used));
+    $('promoMsg').textContent = '₦100 added to your wallet.';
+    renderProfile();
+  } else if (used.includes(c)) {
+    $('promoMsg').textContent = 'Code already used.';
+  } else {
+    $('promoMsg').textContent = 'Invalid code.';
+  }
+}
+function renderProfile(){
+  const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
+  if (!u) return;
+  paintAvatar(u);
+  // Once set, the picker never nags: hint shows the locked state.
+  $('avatarHint').textContent = (u.avatarSet || u.avatar || u.photo)
+    ? 'Photo set ✓ — tap to change' : 'Tap the icon to choose a photo';
+  $('profHello').textContent = `Hello, ${u.first}!`;
+  $('whoIs').innerHTML = `<div class="mut">@${u.username} · ${u.phone}</div>
+    <div class="mut">${u.email} · Email ${u.ev ? '✓' : '✗'} · SMS ${u.pv ? '✓' : '✗'}</div>`;
+  $('profBal').textContent = naira(wallet.balance);
+  $('avatarGrid').innerHTML = AVATAR_CHOICES.map(e =>
+    `<button onclick="pickAvatar('${e}')" style="font-size:28px;background:${u.avatar === e ? '#FFC300' : '#fff'};border:2px solid ${u.avatar === e ? '#121212' : '#E5E7EB'};border-radius:12px;padding:4px 8px;cursor:pointer">${e}</button>`).join('');
+}
+// Suggested avatars (same set as the app).
+const AVATAR_CHOICES = ['🧑🏾','👩🏾','🧔🏾','👩🏾‍💼','🧕🏾','👨🏾‍✈️','🎓','👴🏾','🚌','⭐'];
+function paintAvatar(u){
+  const el = $('profAvatar');
+  if (u.photo) { el.textContent = ''; el.style.backgroundImage = `url(${u.photo})`; el.style.backgroundSize = 'cover'; }
+  else { el.style.backgroundImage = ''; el.textContent = u.avatar || (u.first[0] || '?').toUpperCase(); }
+}
+function toggleAvatarPick(){
+  $('avatarPick').classList.toggle('hidden');
+  $('avatarConfirm').classList.add('hidden'); // confirm reappears only on a new choice
+  stagedAvatar = null;
+}
+// Staged choice: preview first, then the ✓ mark locks it in — never auto-suggests again.
+let stagedAvatar = null;
+function stagePreview(u){
+  paintAvatar({ photo: stagedAvatar && stagedAvatar.photo, avatar: stagedAvatar && stagedAvatar.emoji,
+    first: u.first, username: u.username });
+  $('avatarConfirm').classList.remove('hidden');
+}
+function pickAvatar(e){
+  const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
+  if (!u) return;
+  stagedAvatar = { emoji: e, photo: null };
+  stagePreview(u);
+}
+function uploadAvatar(){
+  const f = $('avatarFile').files[0];
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { alert('Choose an image file.'); return; }
+  const r = new FileReader();
+  r.onload = () => {
+    const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
+    if (!u) return;
+    stagedAvatar = { emoji: null, photo: r.result }; // demo previews locally; real app uploads to avatars/{uid}
+    stagePreview(u);
+  };
+  r.readAsDataURL(f);
+}
+// ✓ mark: locks the choice in, hides the picker, sets the "photo set" state.
+function confirmAvatar(){
+  const u = demoUsers.find(x => x.username === (demoSession && demoSession.username));
+  if (!u || !stagedAvatar) return;
+  u.avatar = stagedAvatar.emoji;
+  u.photo = stagedAvatar.photo;
+  u.avatarSet = true;
+  localStorage.setItem('9ja_users', JSON.stringify(demoUsers));
+  stagedAvatar = null;
+  $('avatarPick').classList.add('hidden');
+  $('avatarHint').textContent = 'Photo set ✓ — tap to change';
+  renderProfile();
+}
 function renderAcct(){
   refreshAcct();
-  const w = demoUsers.find(u => u.username === (demoSession && demoSession.username));
-  $('whoCard').classList.toggle('hidden', !w);
-  if (!w && $('otpBox').classList.contains('hidden')) showAcct('login');
-  if (w) $('whoIs').innerHTML = `<b>${w.first} ${w.last}</b> <span class="mut">@${w.username}</span>
-    <div class="mut">${w.phone} · ${w.email}</div>
-    <div class="mut">Email ${w.ev ? '✓ verified' : '✗ unverified'} · SMS ${w.pv ? '✓ verified' : '✗ unverified'}</div>`;
+  const logged = !!demoSession;
+  // Profile shows ONLY after login/signup — never alongside the forms.
+  showAcct('login');
+  if (logged) renderProfile();
 }
 function demoSignup(){
   const f = $('suFirst').value.trim(), l = $('suLast').value.trim(), u = $('suUser').value.trim();
@@ -776,8 +1064,7 @@ function demoSignup(){
   localStorage.setItem('9ja_users', JSON.stringify(demoUsers));
   pendingOtp = { username: u, channel: ch, code: String(Math.floor(100000 + Math.random() * 900000)) };
   $('otpBox').classList.remove('hidden');
-  $('otpHint').textContent = ch === 'email' ? `(sent to ${em})` : `(sent via SMS to ${ph})`;
-  $('demoCode').textContent = `Demo code (real app sends this by ${ch === 'email' ? 'email' : 'SMS'}): ${pendingOtp.code}`;
+  $('demoCode').textContent = `Demo code (real app sends this by ${ch === 'email' ? 'email' : 'SMS'} to ${ch === 'email' ? em : ph}): ${pendingOtp.code}`;
   msg('Account created — enter the OTP code.');
 }
 function demoVerify(){
@@ -815,12 +1102,56 @@ function needLogin(){
   return false;
 }
 
-// restore cached trips + slips across reloads
+// ---------- PWA: installable + offline shell ----------
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+(function pwa(){
+  const btn = document.getElementById('installBtn');
+  const bar = document.getElementById('pwaBar');
+  const showBar = () => { bar.classList.remove('hidden'); bar.style.display = 'flex'; };
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) return; // already installed — no prompts
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferred = e;
+    btn.classList.remove('hidden');
+    if (!localStorage.getItem('9ja_pwa_dismissed')) showBar();
+  });
+  const go = async () => {
+    if (deferred) {
+      deferred.prompt();
+      await deferred.userChoice.catch(() => {});
+      deferred = null;
+      btn.classList.add('hidden');
+      bar.classList.add('hidden');
+    } else if (isIos) {
+      document.getElementById('pwaSub').textContent = 'iPhone: tap Share ⬆ then “Add to Home Screen”.';
+      showBar();
+    } else {
+      document.getElementById('pwaSub').textContent = 'Browser menu → “Install 9ja Transport” (or Add to Home screen).';
+      showBar();
+    }
+  };
+  btn.onclick = go;
+  document.getElementById('pwaGo').onclick = go;
+  bar.querySelector('button:last-child').onclick = () => {
+    bar.classList.add('hidden');
+    localStorage.setItem('9ja_pwa_dismissed', '1');
+  };
+  // iOS never fires beforeinstallprompt — surface the guide after a beat.
+  if (isIos && !localStorage.getItem('9ja_pwa_dismissed')) setTimeout(showBar, 2500);
+})();
+
+// restore cached trips + slips + wallet across reloads
 try {
   trips = JSON.parse(localStorage.getItem('9ja_cached_trips') || '[]');
   bookings = JSON.parse(localStorage.getItem('9ja_slips') || '[]');
   updateCount();
 } catch (e) {}
+refreshChip();
 refreshAcct();
 
 // ---------- Phase 12 demo: LIVE MAP, danfo moves along Ikeja → CMS ----------
@@ -844,6 +1175,18 @@ function pointAt(km){
   }
   return ROUTE[ROUTE.length - 1];
 }
+// CARTO key (optional): kept in this browser only, attached to tile requests.
+function cartoTiles(){
+  const k = (localStorage.getItem('9ja_carto_key') || '').trim();
+  return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' + (k ? '?api_key=' + encodeURIComponent(k) : '');
+}
+function saveCarto(){
+  const k = $('cartoKey').value.trim();
+  if (!k) { $('cartoMsg').textContent = 'Paste a key first.'; return; }
+  localStorage.setItem('9ja_carto_key', k);
+  $('cartoKey').value = '';
+  $('cartoMsg').textContent = 'Saved in this browser. Reopen Live Tracking to use it.';
+}
 let trk = { km: 0.6, timer: null, stale: false, map: null, marker: null, done: null, notes: [] };
 function trkIcon(dim){
   return L.divIcon({ html: `<div style="opacity:${dim ? 0.45 : 1}">${DANFO_SVG}</div>`,
@@ -857,7 +1200,7 @@ function renderTrack(){
   }
   if (!trk.map) {
     trk.map = L.map('trkMap').setView([6.53, 3.375], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    L.tileLayer(cartoTiles(),
       { attribution: '© OpenStreetMap © CARTO', maxZoom: 19 }).addTo(trk.map);
     L.polyline(ROUTE, { color: '#555', weight: 5 }).addTo(trk.map); // planned route
     trk.done = L.polyline([ROUTE[0]], { color: '#FFC300', weight: 5 }).addTo(trk.map); // travelled

@@ -129,6 +129,10 @@ class FunctionsClient {
     await _f.httpsCallable('confirmCardPayment').call({'bookingId': bookingId});
   }
 
+  Future<void> setAvatar({String? emoji, String? url}) async {
+    await _f.httpsCallable('setAvatar').call({'emoji': emoji, 'url': url});
+  }
+
   Future<void> saveFcmToken(String token) async {
     await _f.httpsCallable('saveFcmToken').call({'token': token});
   }

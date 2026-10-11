@@ -79,6 +79,24 @@ class _SupportScreenState extends State<SupportScreen> {
             'Booking not recognised', 'Payment problem', 'Safety concern',
           ].map((c) => ActionChip(label: Text(c), onPressed: () => _complain(c))).toList()),
         ]))),
+        Card(child: ListTile(
+          leading: const Icon(Icons.smart_toy, color: Color(0xFF0A7A3B)),
+          title: const Text('Bot Chat — instant FAQ answers',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: const Text('Refunds, fares, tracking, wallet… answered on the spot'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const FaqBotScreen())),
+        )),
+        Card(child: ListTile(
+          leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFF175CD3)),
+          title: const Text('Live Chat — talk to support',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: const Text('Online 8am–8pm · avg reply ~2 min'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const LiveChatScreen())),
+        )),
         if (widget.tripId != null) Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Rate trip', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),

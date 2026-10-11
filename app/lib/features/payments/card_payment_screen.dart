@@ -101,6 +101,12 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
             decoration: const InputDecoration(labelText: 'Name on card', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           ElevatedButton(onPressed: _toReview, child: const Text('Continue')),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0A7A3B), foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Back')),
         ] else if (step == 1) ...[
           const Text('Confirm payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
@@ -114,7 +120,12 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
             style: TextStyle(color: Color(0xFF6B7280))),
           const SizedBox(height: 8),
           ElevatedButton(onPressed: busy ? null : _pay, child: Text(busy ? 'Sending…' : 'Pay $naira')),
-          TextButton(onPressed: () => setState(() => step = 0), child: const Text('Back — edit card')),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0A7A3B), foregroundColor: Colors.white),
+            onPressed: () => setState(() => step = 0),
+            child: const Text('Back')),
         ] else ...[
           const Icon(Icons.hourglass_top, size: 56, color: Color(0xFFF79009)),
           const SizedBox(height: 8),

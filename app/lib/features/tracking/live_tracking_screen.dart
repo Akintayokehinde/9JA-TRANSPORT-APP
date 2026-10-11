@@ -9,8 +9,13 @@ import '../../core/network/functions_client.dart';
 // Google Maps when a key is supplied at build time
 //   flutter run --dart-define=GOOGLE_MAPS_KEY=AIza...
 // otherwise free OSM tiles via flutter_map (no key, pilot default).
+// CARTO key (optional, --dart-define=CARTO_API_KEY=...) attaches to tile
+// requests for future traffic/routing services; tiles render without it.
 const _gKey = String.fromEnvironment('GOOGLE_MAPS_KEY');
+const _cartoKey = String.fromEnvironment('CARTO_API_KEY');
 bool get _useGoogle => _gKey.isNotEmpty;
+String get _osmTiles => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+    '${_cartoKey.isEmpty ? '' : '?api_key=$_cartoKey'}';
 
 /// Phase 12: passenger live view — bus icon, ETA, stale handling.
 /// Polls every 15s; only available while trip is active (server enforces).
@@ -110,7 +115,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 ),
                                 children: [
                                   TileLayer(
-                                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    urlTemplate: _osmTiles,
                                     errorTileCallback: (_, __) { if (!mapFailed) setState(() => mapFailed = true); },
                                   ),
                                   // Planned route (static corridor, same shape as backend park coords).

@@ -1,7 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/network/functions_client.dart';
 import '../support/support_screen.dart';
+
+/// Suggested avatars (resonate across faiths/ages/roles; initial letter stays fallback).
+const kAvatarChoices = ['🧑🏾', '👩🏾', '🧔🏾', '👩🏾‍💼', '🧕🏾', '👨🏾‍✈️', '🎓', '👴🏾', '🚌', '⭐'];
 
 /// Passenger dashboard: profile details, wallet balance + fund, transactions, support.
 class DashboardScreen extends StatefulWidget {
@@ -24,6 +30,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() { super.initState(); _load(); }
 
   String n(dynamic k) => '₦${((int.tryParse(k.toString()) ?? 0) / 100).toStringAsFixed(0)}';
+
+  Future<void> _pickAvatar() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Choose profile photo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(height: 8),
+            GridView.count(
+              crossAxisCount: 5, shrinkWrap: true,
+              children: kAvatarChoices.map((e) => IconButton(
+                iconSize: 34, onPressed: () => Navigator.pop(context, 'emoji:$e'),
+                icon: Text(e, style: const TextStyle(fontSize: 32)),
+              )).toList(),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pop(context, 'gallery'),
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Choose from gallery'))),
+          ]),
+        ),
+      ),
+    );
+    if (choice == null) return;
+    try {
+      if (choice == 'gallery') {
+        final img = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 512, imageQuality: 80);
+        if (img == null) return;
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final ref = FirebaseStorage.instance.ref('avatars/$uid/profile.jpg');
+        await ref.putData(await img.readAsBytes(), SettableMetadata(contentType: 'image/jpeg'));
+        await api.setAvatar(url: await ref.getDownloadURL());
+      } else {
+        await api.setAvatar(emoji: choice.substring('emoji:'.length));
+      }
+      _load();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
 
   Future<void> _load() async {
     try {
@@ -92,12 +143,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-              Text('${u['first_name'] ?? ''} ${u['last_name'] ?? ''} ${u['first_name'] == null ? '(no profile yet)' : ''}'
-                .trim(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
-              Text('@${u['username'] ?? '—'} · ${u['phone'] ?? ''} · ${u['email'] ?? ''}',
-                style: const TextStyle(color: Color(0xFF6B7280))),
-              Text('Email ${u['email_verified'] == true ? '✓' : '✗'} · Phone ${u['phone_verified'] == true ? '✓' : '✗'} · Trips ${u['trips_completed'] ?? 0}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              const SizedBox(height: 8),
+              Row(children: [
+                _AvatarButton(
+                  emoji: u['avatar_emoji']?.toString(),
+                  url: u['avatar_url']?.toString(),
+                  fallback: ((u['first_name']?.toString() ?? '?').isNotEmpty)
+                      ? (u['first_name'].toString())[0].toUpperCase()
+                      : '?',
+                  onTap: _pickAvatar,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${u['first_name'] ?? ''} ${u['last_name'] ?? ''} ${u['first_name'] == null ? '(no profile yet)' : ''}'
+                    .trim(), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+                  Text('@${u['username'] ?? '—'} · ${u['phone'] ?? ''} · ${u['email'] ?? ''}',
+                    style: const TextStyle(color: Color(0xFF6B7280))),
+                  Text('Email ${u['email_verified'] == true ? '✓' : '✗'} · Phone ${u['phone_verified'] == true ? '✓' : '✗'} · Trips ${u['trips_completed'] ?? 0}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                ])),
+              ]),
+              TextButton.icon(onPressed: _pickAvatar,
+                icon: const Icon(Icons.edit, size: 16),
+                label: const Text('Change profile photo')),
             ]))),
           Card(color: const Color(0xFFFFF8E1), child: Padding(
             padding: const EdgeInsets.all(14), child: Column(
@@ -147,6 +215,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
           )),
         ]),
       ),
+    );
+  }
+}
+
+/// Profile photo: gallery URL wins, then emoji avatar, then initial letter.
+class _AvatarButton extends StatelessWidget {
+  final String? emoji;
+  final String? url;
+  final String fallback;
+  final VoidCallback onTap;
+  const _AvatarButton({this.emoji, this.url, required this.fallback, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(children: [
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: const Color(0xFFFFC300),
+          backgroundImage: (url != null && url!.isNotEmpty) ? NetworkImage(url!) : null,
+          child: (url == null || url!.isEmpty)
+              ? Text(emoji?.isNotEmpty == true ? emoji! : fallback,
+                  style: const TextStyle(fontSize: 30))
+              : null,
+        ),
+        Positioned(
+          right: 0, bottom: 0,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(color: Color(0xFF121212), shape: BoxShape.circle),
+            child: const Icon(Icons.camera_alt, size: 14, color: Color(0xFFFFC300)),
+          ),
+        ),
+      ]),
     );
   }
 }
