@@ -116,7 +116,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 children: [
                                   TileLayer(
                                     urlTemplate: _osmTiles,
-                                    errorTileCallback: (_, __) { if (!mapFailed) setState(() => mapFailed = true); },
+                                    errorTileCallback: (_, __, ___) { if (!mapFailed) setState(() => mapFailed = true); },
                                   ),
                                   // Planned route (static corridor, same shape as backend park coords).
                                   PolylineLayer(polylines: [
@@ -216,7 +216,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           child: Text(
             _useGoogle ? 'Google Maps · live' : 'OpenStreetMap · free, no key (set GOOGLE_MAPS_KEY for Google)',
             style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12), textAlign: TextAlign.center)),
-        const Padding(padding: const EdgeInsets.all(8),
+        Padding(padding: const EdgeInsets.all(8),
           child: Text('Tracking stops automatically when the trip ends. Only booked passengers can see this bus.',
             style: TextStyle(color: Color(0xFF6B7280), fontSize: 12), textAlign: TextAlign.center)),
       ]),

@@ -63,7 +63,7 @@ class _TripQueueScreenState extends State<TripQueueScreen> {
                     return Card(
                       color: isArrived ? const Color(0xFF0A3D22) : const Color(0xFF1F1F1F),
                       child: ListTile(
-                        leading: Text('${(en.key + 1).toString().padLeft(3, '0')}',
+                        leading: Text((en.key + 1).toString().padLeft(3, '0'),
                           style: const TextStyle(color: Color(0xFFFFC300), fontWeight: FontWeight.w800)),
                         title: Text('${b['passenger_name']} ×${b['seats']}',
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),

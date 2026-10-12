@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/network/functions_client.dart';
+import 'chat_screens.dart';
 
 /// Phase 9: safety (share trip, emergency), complaints, ratings.
 class SupportScreen extends StatefulWidget {

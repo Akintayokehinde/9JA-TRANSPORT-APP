@@ -102,7 +102,7 @@ class _DriverTripsScreenState extends State<DriverTripsScreen> {
           ...trips.map((e) {
             final t = Map<String, dynamic>.from(e as Map);
             final detail = perTrip.cast<Map>().firstWhere(
-              (p) => Map<String, dynamic>.from(p as Map)['id'].toString() == t['id'].toString(),
+              (p) => Map<String, dynamic>.from(p)['id'].toString() == t['id'].toString(),
               orElse: () => <String, dynamic>{});
             final dm = detail.isEmpty ? null : Map<String, dynamic>.from(detail);
             return Card(child: ListTile(
