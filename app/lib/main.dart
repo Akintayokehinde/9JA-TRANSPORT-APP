@@ -17,23 +17,68 @@ import 'features/support/support_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initFirebase();
-  await HiveBoxes.init();
-  runApp(const NineJaApp());
+  // Never let init failures white-screen the app: Firebase isn't configured
+  // in this test build, so boot into offline demo mode instead of crashing.
+  ErrorWidget.builder = (d) => Material(
+    child: Center(child: Padding(padding: const EdgeInsets.all(24),
+      child: Text('Something went wrong starting the app:\n$d',
+        textAlign: TextAlign.center))),
+  );
+  String? initError;
+  try {
+    await initFirebase();
+  } catch (e) {
+    initError = 'Backend not connected: $e';
+  }
+  try {
+    await HiveBoxes.init();
+  } catch (e) {
+    initError = '${initError ?? ''} Storage unavailable: $e';
+  }
+  runApp(NineJaApp(initError: initError));
 }
 
 class NineJaApp extends StatelessWidget {
-  const NineJaApp({super.key});
+  final String? initError;
+  const NineJaApp({super.key, this.initError});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '9ja Transport',
       theme: AppTheme.light(),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (_, snap) => snap.data == null ? const AuthScreen() : const HomeShell(),
-      ),
+      home: _Boot(initError: initError),
     );
+  }
+}
+
+/// Chooses auth-gated home, but survives Firebase being unconfigured:
+/// any auth stream error lands on the login screen with an offline notice.
+class _Boot extends StatelessWidget {
+  final String? initError;
+  const _Boot({this.initError});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(children: [
+        if (initError != null)
+          Container(width: double.infinity, padding: const EdgeInsets.fromLTRB(16, 40, 16, 10),
+            color: const Color(0xFF121212),
+            child: Text('📴 Demo mode — $initError',
+              style: const TextStyle(color: Color(0xFFFFC300), fontSize: 12))),
+        Expanded(child: StreamBuilder<User?>(
+          stream: _authStream(),
+          builder: (_, snap) => snap.data == null ? const AuthScreen() : const HomeShell(),
+        )),
+      ]),
+    );
+  }
+
+  Stream<User?> _authStream() {
+    try {
+      return FirebaseAuth.instance.authStateChanges();
+    } catch (_) {
+      return Stream.value(null);
+    }
   }
 }
 
